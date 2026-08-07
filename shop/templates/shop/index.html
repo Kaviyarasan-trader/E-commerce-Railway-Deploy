@@ -88,6 +88,9 @@ KaviBazaar | Online Shopping
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  @media (max-width: 575px) {
+    .cat-nav { padding: 2px 0 8px; }
+  }
 </style>
 {% if not request.user.is_staff %}
 {% include 'shop/inc/slider.html' %}
