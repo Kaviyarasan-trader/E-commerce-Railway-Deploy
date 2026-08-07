@@ -182,13 +182,19 @@ GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
 # Email (Gmail SMTP) - use a Gmail App Password, NOT your normal Gmail password.
 # When no SMTP password is configured, fall back to the console backend so
 # local development still works without credentials.
+#
+# Gmail SMTP: smtp.gmail.com:587 with STARTTLS (EMAIL_USE_TLS).
+# EMAIL_USE_SSL is explicitly False - never enable TLS and SSL together.
+# EMAIL_TIMEOUT bounds how long a stuck SMTP connection may block a worker.
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'kavibazaar@gmail.com')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', '15'))
 if EMAIL_HOST_PASSWORD:
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
     EMAIL_HOST = 'smtp.gmail.com'
     EMAIL_PORT = 587
     EMAIL_USE_TLS = True
+    EMAIL_USE_SSL = False
 else:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
