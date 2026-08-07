@@ -727,7 +727,7 @@ KaviBazaar | {{ products }}
       </div>
     </div>
     <div id="relScroll" class="rel-scroll-row"
-         style="display:flex;gap:24px;overflow-x:auto;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;touch-action:pan-x;padding-bottom:8px;scrollbar-width:none;">
+         style="display:flex;gap:24px;overflow-x:auto;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;padding-bottom:8px;scrollbar-width:none;">
       {% for item in related_products|slice:":6" %}
       <div style="flex:0 0 calc((100% - 48px) / 3);min-width:0;">
         <div class="fk-card"
@@ -779,7 +779,7 @@ KaviBazaar | {{ products }}
         </div>
       </div>
       <div id="relScroll2" class="rel-scroll-row"
-           style="display:flex;gap:24px;overflow-x:auto;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;touch-action:pan-x;padding-bottom:8px;scrollbar-width:none;">
+           style="display:flex;gap:24px;overflow-x:auto;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;padding-bottom:8px;scrollbar-width:none;">
         {% for item in related_products|slice:"6:" %}
         <div style="flex:0 0 calc((100% - 48px) / 3);min-width:0;">
           <div class="fk-card"
@@ -1103,7 +1103,7 @@ function scrollRelated(dir, id) {
     scroll-behavior: smooth;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch; scrollbar-width: none;
-    touch-action: pan-x; overscroll-behavior-x: contain;
+    overscroll-behavior-x: contain;
     padding: 4px 2px 10px;
   }
   .rev-row::-webkit-scrollbar { display: none; }
