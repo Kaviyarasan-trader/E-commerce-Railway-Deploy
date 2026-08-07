@@ -38,10 +38,19 @@ DEBUG = os.environ.get('DJANGO_DEBUG', 'True').strip().lower() in ('1', 'true', 
 if not DEBUG and SECRET_KEY == 'django-insecure-local-dev-only-do-not-use-in-production':
     raise ImproperlyConfigured('DJANGO_SECRET_KEY must be set when DEBUG is False.')
 
-# Railway exposes the generated *.up.railway.app domain as RAILWAY_PUBLIC_DOMAIN.
-# It is appended automatically so the public domain always works without
-# hardcoding a specific hostname.
-ALLOWED_HOSTS = [h.strip() for h in os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost').split(',') if h.strip()]
+# ALLOWED_HOSTS is configurable via DJANGO_ALLOWED_HOSTS (comma-separated).
+# Defaults cover local development (127.0.0.1, localhost).
+#
+# Railway health checks are sent with the Host header 'healthcheck.railway.app',
+# so that host is always allowed.
+#
+# Railway exposes the generated *.up.railway.app domain as RAILWAY_PUBLIC_DOMAIN;
+# it is appended automatically so the public domain works without hardcoding a
+# specific hostname.
+_DEFAULT_ALLOWED_HOSTS = '127.0.0.1,localhost'
+ALLOWED_HOSTS = [h.strip() for h in os.environ.get('DJANGO_ALLOWED_HOSTS', _DEFAULT_ALLOWED_HOSTS).split(',') if h.strip()]
+if 'healthcheck.railway.app' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('healthcheck.railway.app')
 _RAILWAY_PUBLIC_DOMAIN = os.environ.get('RAILWAY_PUBLIC_DOMAIN', '').strip().lower()
 if _RAILWAY_PUBLIC_DOMAIN and _RAILWAY_PUBLIC_DOMAIN not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(_RAILWAY_PUBLIC_DOMAIN)
