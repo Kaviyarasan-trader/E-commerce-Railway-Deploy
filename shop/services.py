@@ -9,6 +9,11 @@ OTP_VALID_MINUTES = getattr(settings, 'OTP_VALID_MINUTES', 5)
 
 
 def _send_via_sendgrid(api_key, email, otp, purpose):
+    from_email = (
+        settings.SENDGRID_FROM_EMAIL
+        or settings.EMAIL_HOST_USER
+        or 'no-reply@kavibazaar.local'
+    )
     try:
         resp = requests.post(
             "https://api.sendgrid.com/v3/mail/send",
@@ -23,7 +28,7 @@ def _send_via_sendgrid(api_key, email, otp, purpose):
                         "subject": f"KaviBazaar {purpose.title()} OTP",
                     }
                 ],
-                "from": {"email": settings.EMAIL_HOST_USER or "kavibazaar@gmail.com"},
+                "from": {"email": from_email},
                 "content": [
                     {
                         "type": "text/plain",
@@ -48,6 +53,11 @@ def _send_via_sendgrid(api_key, email, otp, purpose):
 def send_otp_email(email, otp, purpose="login"):
     if settings.SENDGRID_API_KEY:
         return _send_via_sendgrid(settings.SENDGRID_API_KEY, email, otp, purpose)
+    # Gmail SMTP is only for local development. Production must use SendGrid
+    # (Railway blocks outbound SMTP), so never fall back to SMTP when DEBUG=False.
+    if not settings.DEBUG:
+        logger.error("OTP email was NOT sent: SendGrid is not configured in production.")
+        return False
     try:
         send_mail(
             f"KaviBazaar {purpose.title()} OTP",

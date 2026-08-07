@@ -203,6 +203,9 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 # outbound SMTP on Hobby/free plans, so when this key is set, OTP emails are
 # sent through SendGrid's HTTPS API instead of Gmail SMTP.
 SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY', '')
+# "From" address used for SendGrid OTP emails (verify it as a Sender in
+# SendGrid). Falls back to EMAIL_HOST_USER when not set.
+SENDGRID_FROM_EMAIL = os.environ.get('SENDGRID_FROM_EMAIL', '')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
