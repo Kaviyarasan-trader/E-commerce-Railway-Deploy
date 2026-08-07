@@ -4,6 +4,7 @@ import re
 import secrets
 import urllib.request
 import urllib.parse
+import urllib.error
 from datetime import timedelta
 import calendar
 import razorpay
@@ -1532,6 +1533,10 @@ def google_auth(request):
 
 GOOGLE_OAUTH_STATE_SESSION_KEY = 'google_oauth_state'
 GOOGLE_OAUTH_NEXT_SESSION_KEY = 'google_oauth_next'
+# The exact redirect_uri sent to Google during authorization, stored so the
+# token exchange reuses the SAME URI (Google rejects exchanges that do not
+# match the authorized redirect URI exactly).
+GOOGLE_OAUTH_REDIRECT_URI_SESSION_KEY = 'google_oauth_redirect_uri'
 
 
 def _google_safe_next(request):
@@ -1556,6 +1561,7 @@ def google_login(request):
     request.session[GOOGLE_OAUTH_NEXT_SESSION_KEY] = _google_safe_next(request)
 
     redirect_uri = _google_redirect_uri(request)
+    request.session[GOOGLE_OAUTH_REDIRECT_URI_SESSION_KEY] = redirect_uri
     logger.info(
         "Google OAuth login started. redirect_uri=%s - this exact URI (no trailing slash) "
         "must be listed under Authorized redirect URIs in Google Cloud Console.", redirect_uri
@@ -1576,11 +1582,26 @@ def google_login(request):
 
 
 def _google_exchange_code(code, redirect_uri):
-    """Exchange the authorization code for tokens at Google's token endpoint."""
+    """Exchange the authorization code for tokens at Google's token endpoint.
+
+    The POST body contains exactly: code, client_id, client_secret,
+    redirect_uri (the same URI used during authorization) and
+    grant_type=authorization_code. Client id/secret come from environment
+    variables - never hardcoded. On failure, Google's response body is logged
+    for debugging, but the client secret is always redacted from logs.
+    """
+    client_id = settings.GOOGLE_CLIENT_ID
+    client_secret = settings.GOOGLE_CLIENT_SECRET
+    if not client_id or not client_secret:
+        raise ValueError(
+            "GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be set "
+            "in environment variables."
+        )
+
     body = urllib.parse.urlencode({
         'code': code,
-        'client_id': settings.GOOGLE_CLIENT_ID,
-        'client_secret': settings.GOOGLE_CLIENT_SECRET,
+        'client_id': client_id,
+        'client_secret': client_secret,
         'redirect_uri': redirect_uri,
         'grant_type': 'authorization_code',
     }).encode('utf-8')
@@ -1589,8 +1610,24 @@ def _google_exchange_code(code, redirect_uri):
         data=body,
         headers={'Content-Type': 'application/x-www-form-urlencoded'},
     )
-    with urllib.request.urlopen(req, timeout=15) as resp:
-        return json.loads(resp.read().decode('utf-8'))
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return json.loads(resp.read().decode('utf-8'))
+    except urllib.error.HTTPError as exc:
+        raw_body = b''
+        try:
+            raw_body = exc.read()
+        except Exception:
+            pass
+        details = raw_body.decode('utf-8', errors='replace').strip()
+        if details and client_secret:
+            details = details.replace(client_secret, '[REDACTED]')
+        logger.error(
+            "Google token exchange rejected with status %s. Response body: %s",
+            exc.code,
+            details or '(no response body)',
+        )
+        raise
 
 
 def google_callback(request):
@@ -1614,7 +1651,8 @@ def google_callback(request):
         messages.error(request, "Google Sign-In did not return a code. Please try again.")
         return redirect('login')
 
-    redirect_uri = _google_redirect_uri(request)
+    redirect_uri = request.session.pop(
+        GOOGLE_OAUTH_REDIRECT_URI_SESSION_KEY, None) or _google_redirect_uri(request)
     try:
         token_data = _google_exchange_code(code, redirect_uri)
     except Exception as exc:
