@@ -443,9 +443,8 @@
   /* ── Notification bell ── */
   .ntf-bell {
     position: relative;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(212, 175, 55, 0.45);
-    border-radius: 50%;
+    background: transparent;
+    border: none;
     color: #F5C76F;
     width: 32px; height: 32px;
     display: inline-flex;
@@ -453,10 +452,10 @@
     justify-content: center;
     font-size: 0.82rem;
     cursor: pointer;
-    transition: background .15s, transform .15s;
+    transition: transform .15s;
     flex: none;
   }
-  .ntf-bell:hover { background: rgba(255, 255, 255, 0.14); transform: scale(1.05); }
+  .ntf-bell:hover { transform: scale(1.1); }
   @keyframes ntfBellBlink {
     0%, 100% { color: #F5C76F; }
     50% { color: #fff; text-shadow: 0 0 10px rgba(245, 199, 111, 0.9); }
