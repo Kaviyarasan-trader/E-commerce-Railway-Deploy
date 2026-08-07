@@ -1385,6 +1385,31 @@ def _resolve_or_create_user(email, first_name='', last_name='', phone=''):
 GOOGLE_NONCE_SESSION_KEY = 'google_auth_nonce'
 
 
+def _google_redirect_uri(request):
+    """Build the exact Google OAuth redirect URI for the current environment.
+
+    Development: http://<local host>:<port>/google-auth/callback (from the
+                 request, so local testing keeps working unchanged).
+    Production:  https://<SITE_DOMAIN>/google-auth/callback, where SITE_DOMAIN
+                 comes from the current KaviBazaar Railway public domain env
+                 var (RAILWAY_PUBLIC_DOMAIN) or the SITE_DOMAIN override - it
+                 is NEVER taken from the incoming Host header, which may be a
+                 stale/old Railway domain.
+
+    The URI is returned without a trailing slash after 'callback', as Google
+    requires the exact redirect_uri registered in Cloud Console.
+    """
+    path = reverse('google_callback')
+    if settings.DEBUG:
+        uri = request.build_absolute_uri(path)
+    else:
+        domain = (getattr(settings, 'SITE_DOMAIN', '') or request.get_host()).rstrip('/')
+        uri = 'https://' + domain + path
+    uri = uri.rstrip('/')
+    logger.info("Google OAuth redirect_uri=%s", uri)
+    return uri
+
+
 def _google_nonce(request):
     """Return the per-session nonce used to bind the Google ID token to this browser."""
     nonce = request.session.get(GOOGLE_NONCE_SESSION_KEY)
@@ -1400,7 +1425,7 @@ def _google_auth_context(request):
         'google_nonce': _google_nonce(request),
         'google_signin_debug': settings.DEBUG,
         'google_signin_enabled': bool(settings.GOOGLE_CLIENT_ID and settings.GOOGLE_CLIENT_SECRET),
-        'google_redirect_uri': request.build_absolute_uri(reverse('google_callback')),
+        'google_redirect_uri': _google_redirect_uri(request),
     }
 
 
@@ -1526,7 +1551,7 @@ def google_login(request):
     request.session[GOOGLE_OAUTH_STATE_SESSION_KEY] = state
     request.session[GOOGLE_OAUTH_NEXT_SESSION_KEY] = _google_safe_next(request)
 
-    redirect_uri = request.build_absolute_uri(reverse('google_callback'))
+    redirect_uri = _google_redirect_uri(request)
     logger.info(
         "Google OAuth login started. redirect_uri=%s - this exact URI (no trailing slash) "
         "must be listed under Authorized redirect URIs in Google Cloud Console.", redirect_uri
@@ -1585,7 +1610,7 @@ def google_callback(request):
         messages.error(request, "Google Sign-In did not return a code. Please try again.")
         return redirect('login')
 
-    redirect_uri = request.build_absolute_uri(reverse('google_callback'))
+    redirect_uri = _google_redirect_uri(request)
     try:
         token_data = _google_exchange_code(code, redirect_uri)
     except Exception as exc:

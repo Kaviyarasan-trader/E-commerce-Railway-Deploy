@@ -320,6 +320,33 @@ class GoogleAuthTests(TestCase):
         self.assertIn('redirect_uri=', resp.url)
         self.assertIn('state=', resp.url)
 
+    @override_settings(
+        DEBUG=False,
+        GOOGLE_CLIENT_ID=GOOGLE_CLIENT_ID_TEST,
+        GOOGLE_CLIENT_SECRET='test-secret',
+        SITE_DOMAIN='kavibazaar-production.up.railway.app',
+        ALLOWED_HOSTS=[
+            'weatherapprender-production.up.railway.app',
+            'kavibazaar-production.up.railway.app',
+            'testserver',
+        ],
+        SECURE_SSL_REDIRECT=False,
+    )
+    def test_google_login_uses_site_domain_for_redirect_uri(self):
+        # Even when the request arrives through a stale/old host header, the
+        # redirect_uri sent to Google must be the current SITE_DOMAIN over
+        # https, with no trailing slash after 'callback'.
+        resp = self.client.get(
+            reverse('google_login'),
+            HTTP_HOST='weatherapprender-production.up.railway.app')
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp.url.startswith('https://accounts.google.com/o/oauth2/v2/auth'))
+        self.assertIn(
+            'redirect_uri=https%3A%2F%2Fkavibazaar-production.up.railway.app%2Fgoogle-auth%2Fcallback',
+            resp.url,
+        )
+        self.assertNotIn('weatherapprender', resp.url)
+
     @override_settings(GOOGLE_CLIENT_ID='', GOOGLE_CLIENT_SECRET='')
     def test_google_login_not_configured(self):
         resp = self.client.get(reverse('google_login'))

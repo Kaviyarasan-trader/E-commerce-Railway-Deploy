@@ -179,6 +179,18 @@ GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY', '')
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
 GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
 
+# Canonical public domain used to build absolute URLs (Google OAuth redirect
+# URI) in production. Preferred order:
+#   1. SITE_DOMAIN override (e.g. a custom domain like kavibazaar.com)
+#   2. Railway's generated public domain (RAILWAY_PUBLIC_DOMAIN env var)
+# Never derive this from the incoming Host header in production, because a
+# stale/old Railway domain can be forwarded and would produce a wrong callback
+# URL (e.g. the old Weather App URL).
+SITE_DOMAIN = (
+    os.environ.get('SITE_DOMAIN', '').strip().lower()
+    or _RAILWAY_PUBLIC_DOMAIN
+)
+
 # Email (Gmail SMTP) - use a Gmail App Password, NOT your normal Gmail password.
 # When no SMTP password is configured, fall back to the console backend so
 # local development still works without credentials.
