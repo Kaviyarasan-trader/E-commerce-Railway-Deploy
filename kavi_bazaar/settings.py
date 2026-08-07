@@ -238,6 +238,45 @@ else:
     SECURE_SSL_REDIRECT = False
 
 
+# Logging - app logs (shop.services, shop.views, ...) must reach the console
+# so Railway logs show OTP/SendGrid status. Django's default LOGGING only
+# wires up the 'django' loggers and drops everything below WARNING for other
+# loggers, which hid the SendGrid HTTP status.
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {name} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'shop': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.server': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
+
+
 # ─────────────────────────────────────────────────────────────
 # Jazzmin (Django admin) — Premium dark-luxury theme
 # ─────────────────────────────────────────────────────────────

@@ -74,6 +74,10 @@ def send_otp_email(email, otp, purpose="login"):
     if not settings.DEBUG:
         logger.error("OTP email was NOT sent: SendGrid is not configured in production.")
         return False
+    logger.warning(
+        "SendGrid not configured; falling back to EMAIL_BACKEND=%s (local dev only).",
+        settings.EMAIL_BACKEND,
+    )
     try:
         send_mail(
             f"KaviBazaar {purpose.title()} OTP",
