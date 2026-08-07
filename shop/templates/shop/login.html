@@ -187,6 +187,33 @@
     padding: 1px 5px;
     font-size: 11px;
   }
+
+  /* ── Mobile-only compact auth card ── */
+  @media (max-width: 575px) {
+    .auth-section { padding: 20px 0 28px; }
+    .auth-card { padding: 20px 18px 18px; border-radius: 16px; }
+    .auth-title { font-size: 20px; }
+    .auth-underline { margin: 6px 0 12px; }
+    .auth-sub { font-size: 12px; margin-bottom: 10px; line-height: 1.45; }
+
+    .auth-tabs { margin-bottom: 12px; padding: 3px; }
+    .auth-tab { padding: 6px 10px; font-size: 12px; }
+
+    .form-label { font-size: 12px; }
+    .form-control { padding: .45rem .8rem; }
+    .auth-card .mb-4 { margin-bottom: 12px !important; }
+    .auth-card .row.mb-3 { margin-bottom: 10px !important; }
+    .field-error { font-size: 11px; margin-top: 4px; }
+
+    .btn-auth { height: 38px; font-size: 13px; }
+
+    .auth-divider { margin: 12px 0 10px; gap: 10px; }
+    .google-fallback-btn { height: 38px; font-size: 14px; border-radius: 20px; }
+    .google-auth-note { margin-top: 8px; font-size: 11px; }
+    .google-config-warning { margin: 0 0 8px; padding: 7px 10px; font-size: 11px; }
+
+    .auth-note { margin-top: 10px; font-size: 11px; gap: 6px; }
+  }
 </style>
 
 <section class="auth-section">
