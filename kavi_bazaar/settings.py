@@ -191,6 +191,16 @@ SITE_DOMAIN = (
     or _RAILWAY_PUBLIC_DOMAIN
 )
 
+# Show the exact Google OAuth redirect base in the deploy logs at startup, so
+# the current KaviBazaar Railway domain (not a stale Weather App URL) is
+# verifiable before any OAuth request happens.
+if not DEBUG:
+    _google_redirect_domain = SITE_DOMAIN or 'MISSING (set RAILWAY_PUBLIC_DOMAIN or SITE_DOMAIN)'
+    print(
+        "Google OAuth redirect URI will be https://%s/google-auth/callback" % _google_redirect_domain,
+        flush=True,
+    )
+
 # Email (Gmail SMTP) - use a Gmail App Password, NOT your normal Gmail password.
 # When no SMTP password is configured, fall back to the console backend so
 # local development still works without credentials.

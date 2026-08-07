@@ -326,7 +326,7 @@ class GoogleAuthTests(TestCase):
         GOOGLE_CLIENT_SECRET='test-secret',
         SITE_DOMAIN='kavibazaar-production.up.railway.app',
         ALLOWED_HOSTS=[
-            'weatherapprender-production.up.railway.app',
+            'stale-weather-app-production.up.railway.app',
             'kavibazaar-production.up.railway.app',
             'testserver',
         ],
@@ -338,14 +338,34 @@ class GoogleAuthTests(TestCase):
         # https, with no trailing slash after 'callback'.
         resp = self.client.get(
             reverse('google_login'),
-            HTTP_HOST='weatherapprender-production.up.railway.app')
+            HTTP_HOST='stale-weather-app-production.up.railway.app')
         self.assertEqual(resp.status_code, 302)
         self.assertTrue(resp.url.startswith('https://accounts.google.com/o/oauth2/v2/auth'))
         self.assertIn(
             'redirect_uri=https%3A%2F%2Fkavibazaar-production.up.railway.app%2Fgoogle-auth%2Fcallback',
             resp.url,
         )
-        self.assertNotIn('weatherapprender', resp.url)
+        self.assertNotIn('stale-weather-app', resp.url)
+
+    @override_settings(
+        DEBUG=True,
+        GOOGLE_CLIENT_ID=GOOGLE_CLIENT_ID_TEST,
+        GOOGLE_CLIENT_SECRET='test-secret',
+        SITE_DOMAIN='kavibazaar-production.up.railway.app',
+        ALLOWED_HOSTS=['stale-weather-app-production.up.railway.app', 'testserver'],
+    )
+    def test_google_login_uses_site_domain_even_when_debug_true(self):
+        # A configured domain must win over DEBUG, otherwise an accidentally
+        # enabled DJANGO_DEBUG on Railway would rebuild the URI from the stale
+        # Host header again (the old http:// Weather App URL).
+        resp = self.client.get(
+            reverse('google_login'),
+            HTTP_HOST='stale-weather-app-production.up.railway.app')
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn(
+            'redirect_uri=https%3A%2F%2Fkavibazaar-production.up.railway.app%2Fgoogle-auth%2Fcallback',
+            resp.url,
+        )
 
     @override_settings(GOOGLE_CLIENT_ID='', GOOGLE_CLIENT_SECRET='')
     def test_google_login_not_configured(self):

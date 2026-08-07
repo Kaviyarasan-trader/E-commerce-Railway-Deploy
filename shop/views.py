@@ -1388,23 +1388,27 @@ GOOGLE_NONCE_SESSION_KEY = 'google_auth_nonce'
 def _google_redirect_uri(request):
     """Build the exact Google OAuth redirect URI for the current environment.
 
-    Development: http://<local host>:<port>/google-auth/callback (from the
-                 request, so local testing keeps working unchanged).
-    Production:  https://<SITE_DOMAIN>/google-auth/callback, where SITE_DOMAIN
-                 comes from the current KaviBazaar Railway public domain env
-                 var (RAILWAY_PUBLIC_DOMAIN) or the SITE_DOMAIN override - it
-                 is NEVER taken from the incoming Host header, which may be a
-                 stale/old Railway domain.
+    Deployed (SITE_DOMAIN / RAILWAY_PUBLIC_DOMAIN configured):
+        https://<domain>/google-auth/callback, always over https, always from
+        the configured domain - NEVER from the incoming Host header, which may
+        be a stale/old Railway domain (e.g. the old Weather App URL).
+    Local development (DEBUG=True, no domain configured):
+        http://<local host>:<port>/google-auth/callback from the request, so
+        localhost/127.0.0.1 keep working unchanged.
+    Deployed without a configured domain (DEBUG=False, last resort):
+        https://<request host>/google-auth/callback, still over https.
 
     The URI is returned without a trailing slash after 'callback', as Google
     requires the exact redirect_uri registered in Cloud Console.
     """
     path = reverse('google_callback')
-    if settings.DEBUG:
+    domain = (getattr(settings, 'SITE_DOMAIN', '') or '').strip().rstrip('/')
+    if domain:
+        uri = 'https://' + domain + path
+    elif settings.DEBUG:
         uri = request.build_absolute_uri(path)
     else:
-        domain = (getattr(settings, 'SITE_DOMAIN', '') or request.get_host()).rstrip('/')
-        uri = 'https://' + domain + path
+        uri = 'https://' + request.get_host().rstrip('/') + path
     uri = uri.rstrip('/')
     logger.info("Google OAuth redirect_uri=%s", uri)
     return uri
