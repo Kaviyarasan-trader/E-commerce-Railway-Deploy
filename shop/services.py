@@ -42,8 +42,24 @@ def _send_via_sendgrid(api_key, email, otp, purpose):
             timeout=15,
         )
         if resp.status_code == 202:
+            logger.info("SendGrid OTP email accepted for %s (status 202)", email)
             return True
-        logger.error("SendGrid OTP email rejected for %s (status %s)", email, resp.status_code)
+        error_detail = ''
+        try:
+            errors = (resp.json() or {}).get('errors') or []
+            error_detail = '; '.join(
+                str(e.get('message', '')) for e in errors
+                if isinstance(e, dict) and e.get('message')
+            )
+        except Exception:
+            error_detail = ''
+        if error_detail:
+            logger.error(
+                "SendGrid OTP email rejected for %s (status %s): %s",
+                email, resp.status_code, error_detail,
+            )
+        else:
+            logger.error("SendGrid OTP email rejected for %s (status %s)", email, resp.status_code)
         return False
     except Exception as e:
         logger.error("SendGrid OTP email could not be sent to %s: %s", email, e)
