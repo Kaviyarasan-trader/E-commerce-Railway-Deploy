@@ -46,8 +46,5 @@ env/
 # folder static/ is tracked and committed.
 staticfiles/
 
-# Uploaded media
-media/
-
 # Railway (nixpacks.toml optional; railway.json is committed intentionally)
 nixpacks.toml
