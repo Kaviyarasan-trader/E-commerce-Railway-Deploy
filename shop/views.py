@@ -1307,8 +1307,11 @@ def _issue_login_otp(email, is_new):
     """Rate-limited OTP issuance. Returns (ok, error_message)."""
     # Fail closed in production: the console email backend only prints to
     # stdout, so an OTP "sent" through it would never reach the user while
-    # the UI claims success. Never let that happen when DEBUG is off.
-    if not settings.DEBUG and settings.EMAIL_BACKEND == 'django.core.mail.backends.console.EmailBackend':
+    # the UI claims success. Never let that happen when DEBUG is off unless
+    # SendGrid (HTTPS API) is configured to deliver the email instead.
+    if (not settings.DEBUG
+            and settings.EMAIL_BACKEND == 'django.core.mail.backends.console.EmailBackend'
+            and not settings.SENDGRID_API_KEY):
         logger.error("OTP email was NOT sent: console email backend is active while DEBUG=False (SMTP not configured).")
         return False, "Could not send the OTP right now. Please try again later."
 

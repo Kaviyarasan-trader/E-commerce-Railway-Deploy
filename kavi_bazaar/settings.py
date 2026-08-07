@@ -199,6 +199,11 @@ else:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
+# SendGrid HTTPS API - used for OTP emails in production. Railway blocks
+# outbound SMTP on Hobby/free plans, so when this key is set, OTP emails are
+# sent through SendGrid's HTTPS API instead of Gmail SMTP.
+SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY', '')
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
