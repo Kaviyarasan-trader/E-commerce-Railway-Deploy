@@ -143,9 +143,14 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
-
+#
+# Project-level source static lives in <project root>/static (committed to git)
+# and is picked up via STATICFILES_DIRS. App-level source lives in
+# shop/static/ and is auto-discovered. collectstatic merges both into
+# STATIC_ROOT (staticfiles/), which WhiteNoise serves in production.
 STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'static'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / 'static']
 
 MEDIA_URL = '/images/'
 MEDIA_ROOT = BASE_DIR / 'media'

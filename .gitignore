@@ -39,11 +39,12 @@ env/
 .env
 .env.local
 
+# Database
+
 # Static files (if using whitenoise)
+# staticfiles/ is collectstatic output - ignored. The project-level source
+# folder static/ is tracked and committed.
 staticfiles/
-# Root-anchored: only the collectstatic output dir at the project root is
-# ignored. Source static files in shop/static/ MUST be committed.
-/static/
 
 # Uploaded media
 media/

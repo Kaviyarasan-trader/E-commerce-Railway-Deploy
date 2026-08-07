@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="goldGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F9D976"/>
+      <stop offset="0.55" stop-color="#E7B23B"/>
+      <stop offset="1" stop-color="#C08C1E"/>
+    </linearGradient>
+    <radialGradient id="badgeGrad" cx="0.5" cy="0.42" r="0.8">
+      <stop offset="0" stop-color="#16224E"/>
+      <stop offset="1" stop-color="#0B1230"/>
+    </radialGradient>
+  </defs>
+
+  <!-- dark navy circular badge with thin gold ring -->
+  <circle cx="512" cy="512" r="470" fill="url(#badgeGrad)"/>
+  <circle cx="512" cy="512" r="470" fill="none" stroke="#D4AF37" stroke-width="9"/>
+  <circle cx="512" cy="512" r="447" fill="none" stroke="#D4AF37" stroke-opacity="0.35" stroke-width="2.5"/>
+
+  <!-- speed / motion lines on the left of the cart -->
+  <path d="M352 468 H406" stroke="url(#goldGrad)" stroke-width="13" stroke-linecap="round"/>
+  <path d="M326 508 H406" stroke="url(#goldGrad)" stroke-width="13" stroke-linecap="round"/>
+  <path d="M344 548 H394" stroke="url(#goldGrad)" stroke-width="13" stroke-linecap="round"/>
+
+  <!-- cart handle -->
+  <path d="M408 452 C 408 352, 616 352, 616 452" fill="none" stroke="url(#goldGrad)" stroke-width="26" stroke-linecap="round"/>
+
+  <!-- cart basket -->
+  <rect x="400" y="452" width="224" height="180" rx="26" fill="url(#goldGrad)"/>
+  <rect x="400" y="452" width="224" height="30" rx="15" fill="#F9D976" opacity="0.9"/>
+
+  <!-- bold letter K -->
+  <path d="M482 484 L482 566" stroke="#0B1230" stroke-width="27" stroke-linecap="round"/>
+  <path d="M494 506 L562 490" stroke="#0B1230" stroke-width="27" stroke-linecap="round"/>
+  <path d="M494 542 L562 566" stroke="#0B1230" stroke-width="27" stroke-linecap="round"/>
+
+  <!-- two wheels -->
+  <circle cx="444" cy="646" r="16" fill="#B9851C"/>
+  <circle cx="580" cy="646" r="16" fill="#B9851C"/>
+</svg>
