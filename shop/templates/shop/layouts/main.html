@@ -263,7 +263,7 @@
       @media (max-width: 991px) {
         .navbar .navbar-nav { gap: 4px !important; padding: 12px 0; }
         .navbar .navbar-nav a { padding: 8px 12px !important; }
-        .carousel-item img { height: 30vh !important; }
+        .carousel-item img { height: 22vh !important; object-fit: cover; object-position: center; }
 
         /* ── Colored image backdrop on product cards (mobile/tablet) ── */
         .fk-img {
@@ -344,6 +344,9 @@
         .product-card .old-price { font-size: 10px !important; color: #999 !important; }
         .product-card .discount { font-size: 10px !important; color: #26a541 !important; font-weight: 600; }
         .product-card .product-rating { margin-top: 3px !important; padding: 1px 6px !important; font-size: 11px !important; }
+      }
+      @media (min-width: 992px) {
+        .carousel-item img { height: 420px; object-fit: cover; object-position: center; }
       }
     </style>
   </head>
