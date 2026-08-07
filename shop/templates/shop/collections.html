@@ -170,6 +170,30 @@
     padding: 40px 0;
     text-align: center;
   }
+
+  /* ── Mobile-only compact hero (Bestsellers) and categories ── */
+  @media (max-width: 575px) {
+    .hero-section { padding: 36px 0 28px; }
+    .hero-eyebrow { margin-bottom: 6px; }
+    .hero-title { margin-bottom: 8px; }
+    .hero-sub { font-size: 13px; margin: 0 auto 14px; }
+    .hero-actions { gap: 8px; }
+    .btn-hero-primary,
+    .btn-hero-secondary {
+      height: 38px;
+      font-size: 12px;
+      padding: 0 18px;
+      border-radius: 10px;
+    }
+
+    .categories-section { padding: 0 0 32px; min-height: 0; }
+    .section-title { margin-bottom: 12px; }
+    .cat-card-img { height: 92px; }
+    .cat-card-body { padding: 8px 10px 10px; gap: 3px; }
+    .cat-card-name { font-size: 11px; }
+    .cat-card-desc { font-size: 10px; }
+    .cat-card-arrow { font-size: 12px; }
+  }
 </style>
 
 <!-- Hero -->
