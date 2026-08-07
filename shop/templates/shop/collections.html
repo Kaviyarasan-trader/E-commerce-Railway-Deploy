@@ -1,0 +1,235 @@
+{% extends 'shop/layouts/main.html' %}
+{% load static %}
+{% block title %}
+  KaviBazaar | Online Shopping
+{% endblock title %}
+{% block content %}
+
+<style>
+  /* Hero */
+  .hero-section {
+    background: #faf9f6;
+    padding: 72px 0 56px;
+    text-align: center;
+  }
+  .hero-eyebrow {
+    font-size: 11px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: #aaa;
+    margin-bottom: 12px;
+  }
+  .hero-title {
+    font-size: 42px;
+    font-weight: 700;
+    color: #1a1a1a;
+    font-family: Georgia, serif;
+    line-height: 1.2;
+    margin-bottom: 14px;
+  }
+  .hero-sub {
+    font-size: 14px;
+    color: #888;
+    line-height: 1.7;
+    max-width: 420px;
+    margin: 0 auto 28px;
+  }
+  .hero-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .btn-hero-primary {
+    height: 46px;
+    background: #2C2C2A;
+    color: #F1EFE8;
+    border: none;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    padding: 0 28px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    transition: opacity .15s, transform .1s;
+  }
+  .btn-hero-primary:hover { opacity: .85; color: #F1EFE8; text-decoration: none; }
+  .btn-hero-primary:active { transform: scale(.98); }
+  .btn-hero-secondary {
+    height: 46px;
+    background: transparent;
+    color: #1a1a1a;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 0 28px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    transition: background .15s, transform .1s;
+  }
+  .btn-hero-secondary:hover { background: #f0ede6; color: #1a1a1a; text-decoration: none; }
+  .btn-hero-secondary:active { transform: scale(.98); }
+
+  /* Categories section */
+  .categories-section {
+    background: #faf9f6;
+    padding: 0 0 48px;
+    min-height: 400px;
+  }
+  .section-divider { border: none; border-top: 1px solid #e8e5dc; margin: 0 0 12px; }
+  .section-eyebrow {
+    font-size: 11px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: #aaa;
+    margin-bottom: 4px;
+  }
+  .section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a1a1a;
+    font-family: Georgia, serif;
+    margin-bottom: 20px;
+  }
+
+  /* Category card */
+  .cat-card {
+    background: #fff;
+    border: 1px solid #ece9e1;
+    border-radius: 12px;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    transition: border-color .2s, transform .2s;
+  }
+  .cat-card:hover {
+    border-color: #c8c4bb;
+    transform: translateY(-2px);
+    text-decoration: none;
+  }
+  .cat-card-img {
+    height: 120px;
+    overflow: hidden;
+    background: #f3f1eb;
+    position: relative;
+  }
+  .cat-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top;
+    transition: transform .35s ease;
+  }
+  .cat-card:hover .cat-card-img img { transform: scale(1.04); }
+  .cat-card-body {
+    padding: 10px 12px 12px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .cat-card-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1a1a1a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0;
+  }
+  .cat-card-desc {
+    font-size: 11px;
+    color: #aaa;
+    line-height: 1.4;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+    margin: 0;
+  }
+  .cat-card-arrow {
+    margin-top: auto;
+    font-size: 14px;
+    color: #ccc;
+    line-height: 1;
+    transition: color .15s, transform .15s;
+  }
+  .cat-card:hover .cat-card-arrow {
+    color: #1a1a1a;
+    transform: translateX(3px);
+  }
+  .empty-state {
+    font-size: 13px;
+    color: #bbb;
+    padding: 40px 0;
+    text-align: center;
+  }
+</style>
+
+<!-- Hero -->
+<section class="hero-section">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-6 col-md-8 mx-auto">
+        <div class="hero-eyebrow">KaviBazaar</div>
+        <h1 class="hero-title">Bestsellers</h1>
+        <p class="hero-sub">Our most popular products based on sales. Updated hourly.</p>
+        <div class="hero-actions">
+  {% if request.user.is_authenticated %}
+    <a href="/" class="btn-hero-primary">Shop Now</a>
+    <a href="{% url 'my_orders' %}" class="btn-hero-secondary">My Orders</a>
+  {% else %}
+    <a href="{% url 'login' %}" class="btn-hero-primary">Sign in</a>
+    <a href="{% url 'register' %}" class="btn-hero-secondary">Create account</a>
+  {% endif %}
+</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Categories -->
+<section class="categories-section">
+  <div class="container">
+    <div class="row">
+      <div class="col-12">
+        <hr class="section-divider">
+        <div class="section-eyebrow">Browse</div>
+        <h2 class="section-title">Categories</h2>
+        {% include 'shop/inc/message.html' %}
+      </div>
+
+      {% for item in catagory %}
+      <div class="col-6 col-md-4 col-lg-2 mb-3">
+        <a href="{% url 'collections' item.name %}" class="cat-card">
+          <div class="cat-card-img">
+            {% if item.image %}
+              <img src="{{ item.image.url }}" alt="{{ item.name }}">
+            {% else %}
+              <img src="{% static 'images/no-image.jpg' %}" alt="No Image" style="object-position:center;">
+            {% endif %}
+          </div>
+          <div class="cat-card-body">
+            <p class="cat-card-name">{{ item.name }}</p>
+            <p class="cat-card-desc">{{ item.description }}</p>
+            <div class="cat-card-arrow">→</div>
+          </div>
+        </a>
+      </div>
+      {% empty %}
+      <div class="col-12">
+        <p class="empty-state">No categories available at the moment.</p>
+      </div>
+      {% endfor %}
+
+    </div>
+  </div>
+</section>
+
+{% endblock content %}

@@ -1,0 +1,1215 @@
+<style>
+  .premium-nav {
+    background: linear-gradient(135deg, #0e0a23 0%, #171136 38%, #241a4f 70%, #2c2163 100%);
+    box-shadow: 0 8px 26px rgba(10, 6, 30, 0.55);
+    padding: 0.5rem 1rem;
+    height: 62px;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.35);
+    z-index: 1030;
+  }
+  .premium-nav::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #D4AF37, #f6e7b2, #D4AF37, transparent);
+    background-size: 200% 100%;
+    animation: shimmer 6s linear infinite;
+  }
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+  .premium-nav::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(1100px 140px at 15% -20%, rgba(212,175,55,0.14), transparent 55%),
+                radial-gradient(800px 120px at 85% -30%, rgba(255,255,255,0.06), transparent 55%);
+    pointer-events: none;
+  }
+
+  .brand-gold {
+    font-size: 1.45rem;
+    letter-spacing: 1.8px;
+    font-weight: 800;
+    text-transform: uppercase;
+    font-family: Georgia, 'Times New Roman', serif;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(110deg, #D4AF37 20%, #F5C76F 40%, #fff7d6 50%, #F5C76F 60%, #D4AF37 80%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 2px 8px rgba(212, 175, 55, 0.4));
+    animation: brandShimmer 3.2s ease-in-out infinite;
+    transition: transform .2s;
+  }
+  .brand-gold:hover { transform: scale(1.02); }
+  .brand-icon {
+    width: 42px; height: 42px;
+    border-radius: 12px;
+    background: linear-gradient(145deg, #F5C76F, #D4AF37);
+    color: #171136;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.45), inset 0 1px 0 rgba(255,255,255,0.6);
+    -webkit-text-fill-color: #171136;
+  }
+  .brand-icon i { -webkit-text-fill-color: #171136; }
+
+  .nav-toggle {
+    border: 1px solid rgba(212, 175, 55, 0.6);
+    border-radius: 10px;
+    outline: none;
+    background: rgba(255,255,255,0.05);
+    transition: background .15s, transform .15s;
+  }
+  .nav-toggle:hover { background: rgba(255,255,255,0.12); transform: scale(1.05); }
+
+  .search-wrap {
+    width: 100%;
+    max-width: 370px;
+    position: relative;
+    margin: 0 auto;
+  }
+  .search-glass {
+    background: #fff;
+    border: 1px solid #e6e2d8;
+    border-radius: 8px;
+    height: 40px;
+    align-items: center;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .search-glass:focus-within {
+    border-color: #3C3489;
+    box-shadow: 0 0 0 3px rgba(60, 52, 137, 0.14);
+    background: #fff;
+  }
+  .search-glass input {
+    border: none;
+    font-size: 0.78rem;
+    outline: none;
+    background: transparent;
+    color: #1a1a1a;
+    height: 38px;
+    padding: 0 10px 0 2px;
+    flex: 1;
+  }
+  .search-glass input::placeholder { color: #9a9a9a; font-size: 0.76rem; }
+  .search-btn {
+    background: transparent;
+    color: #888;
+    border: none;
+    font-weight: 400;
+    border-radius: 8px 0 0 8px;
+    width: auto;
+    padding: 0 8px 0 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.92rem;
+    transition: color .15s;
+  }
+  .search-btn:hover { color: #3C3489; filter: none; background: transparent; }
+  .mic-btn {
+    background: transparent;
+    color: #888;
+    border: none;
+    border-radius: 0 8px 8px 0;
+    padding: 0 12px 0 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    transition: color .15s, transform .15s;
+    cursor: pointer;
+  }
+  .mic-btn:hover { color: #3C3489; }
+  .mic-btn.listening {
+    color: #D32F2F;
+    animation: mic-pulse 1.1s ease-in-out infinite;
+  }
+  @keyframes mic-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.18); }
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .premium-link {
+    color: #e9e6f8;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    text-decoration: none;
+    padding: 8px 12px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    position: relative;
+    transition: color .18s;
+  }
+  .premium-link i { color: #F5C76F; }
+  .premium-link:hover { color: #fff; }
+  .premium-link.active { color: #F5C76F; }
+
+  .nav-avatar {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6B5BD6, #3C3489);
+    border: 1.5px solid #F5C76F;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    flex: none;
+  }
+  img.nav-avatar { object-fit: cover; }
+
+  .gold-pill {
+    background: linear-gradient(145deg, #F5C76F 0%, #D4AF37 100%);
+    color: #171136;
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 9px 18px;
+    border-radius: 30px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 14px rgba(212, 175, 55, 0.4), inset 0 1px 0 rgba(255,255,255,0.6);
+    position: relative;
+    overflow: hidden;
+    transition: transform .18s, box-shadow .18s;
+  }
+  .gold-pill i { color: #171136; }
+  .gold-pill::before {
+    content: "";
+    position: absolute;
+    top: 0; left: -80%;
+    width: 50%; height: 100%;
+    background: linear-gradient(115deg, transparent, rgba(255,255,255,0.6), transparent);
+    transform: skewX(-20deg);
+    transition: left .5s ease;
+  }
+  .gold-pill:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(212, 175, 55, 0.55);
+    color: #0e0a23;
+  }
+  .gold-pill:hover::before { left: 130%; }
+
+  .navbar-collapse { z-index: 1029; }
+
+  @media (max-width: 991.98px) {
+    .navbar-collapse {
+      background: linear-gradient(135deg, #0e0a23 0%, #241a4f 70%, #2c2163 100%);
+      margin: 12px -1rem -0.6rem;
+      padding: 14px;
+      border-radius: 0 0 16px 16px;
+      box-shadow: 0 14px 28px rgba(10, 6, 30, 0.55);
+      border-top: 1px solid rgba(212, 175, 55, 0.3);
+    }
+    .nav-links { flex-direction: column; align-items: stretch; gap: 6px; padding: 6px 0; }
+    .premium-link { padding: 11px 12px; }
+    .gold-pill { justify-content: center; padding: 11px 18px; }
+    .search-wrap { margin: 4px 0 10px; }
+  }
+
+  /* ── Flipkart-style bottom navigation (mobile/tablet only) ── */
+  .bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 60px;
+    z-index: 1040;
+    background: linear-gradient(135deg, #0e0a23 0%, #171136 40%, #241a4f 75%, #2c2163 100%);
+    border-top: 1px solid rgba(212, 175, 55, 0.35);
+    box-shadow: 0 -6px 22px rgba(10, 6, 30, 0.55);
+    padding-bottom: env(safe-area-inset-bottom);
+    touch-action: manipulation;
+  }
+  .bottom-nav-inner {
+    display: flex;
+    align-items: stretch;
+    height: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .bottom-nav-inner::-webkit-scrollbar { display: none; }
+  .bottom-tab {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    text-decoration: none;
+    color: #c9c5e6;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: .6px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    transition: color .15s;
+  }
+  .bottom-tab i { font-size: 1.15rem; }
+  .bottom-tab-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    line-height: 1;
+  }
+  .bottom-avatar {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6B5BD6, #3C3489);
+    border: 1.5px solid #F5C76F;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+  img.bottom-avatar { object-fit: cover; }
+  .bottom-tab.active,
+  .bottom-tab:active { color: #F5C76F; }
+  .bottom-nav-wide .bottom-tab {
+    flex: 1 1 0;
+    min-width: 88px;
+    padding: 0 8px;
+    font-size: 0.5rem;
+    letter-spacing: .2px;
+    gap: 2px;
+  }
+  .bottom-nav-wide .bottom-tab i { font-size: 0.95rem; }
+  .bottom-cart-badge {
+    min-width: 16px; height: 16px;
+    border-radius: 8px;
+    background: linear-gradient(145deg, #F5C76F, #D4AF37);
+    color: #171136;
+    font-size: 9px;
+    font-weight: 800;
+    line-height: 16px;
+    text-align: center;
+    padding: 0 3px;
+  }
+  @media (max-width: 380px) {
+    .bottom-tab { font-size: 0.54rem; letter-spacing: .2px; }
+    .bottom-tab i { font-size: 1.05rem; }
+  }
+
+  /* ── Mobile top bar (brand + search, always visible on phones) ── */
+  .mobile-topbar {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 1035;
+    background: linear-gradient(135deg, #0e0a23 0%, #241a4f 100%);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.35);
+    box-shadow: 0 6px 18px rgba(10, 6, 30, 0.55);
+    padding: 8px 12px 10px;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .mobile-topbar .brand-gold {
+    font-size: 1.1rem;
+    letter-spacing: 1.5px;
+    white-space: nowrap;
+  }
+  .mobile-topbar .brand-icon { width: 34px; height: 34px; font-size: 1rem; }
+  .mobile-topbar .search-wrap { margin: 0; max-width: none; width: 100%; flex: none; }
+  @keyframes brandShimmer {
+    0% { background-position: 0% 0; filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.35)); }
+    50% { background-position: 100% 0; filter: drop-shadow(0 0 20px rgba(245, 199, 111, 0.95)); }
+    100% { background-position: 0% 0; filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.35)); }
+  }
+  .mobile-topbar .brand-gold {
+    background: linear-gradient(110deg, #D4AF37 20%, #F5C76F 40%, #fff7d6 50%, #F5C76F 60%, #D4AF37 80%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: brandShimmer 3.2s ease-in-out infinite;
+  }
+
+  @media (max-width: 991.98px) {
+    .premium-nav { display: none !important; }
+    .mobile-topbar { display: flex; }
+    body { padding-top: 98px !important; padding-bottom: 60px; }
+    .bottom-nav { display: block; }
+  }
+  @media (min-width: 992px) {
+    .bottom-nav { display: none; }
+    .mobile-topbar { display: none; }
+  }
+
+  #suggestions, #mobileSuggestions {
+    background: #fff;
+    border: 1px solid #e0ddd5;
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 10px 26px rgba(30, 25, 80, 0.22);
+    overflow: hidden;
+  }
+  #suggestions .suggestion-item, #mobileSuggestions .suggestion-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: background .12s;
+    text-decoration: none;
+    color: #1a1a1a;
+  }
+  #suggestions .suggestion-item:hover, #mobileSuggestions .suggestion-item:hover { background: #f5f3ed; }
+  #suggestions .suggestion-item img, #mobileSuggestions .suggestion-item img {
+    width: 36px; height: 36px;
+    object-fit: contain;
+    border-radius: 6px;
+    background: #f8f7f4;
+  }
+  #suggestions .suggestion-item .s-ic, #mobileSuggestions .suggestion-item .s-ic {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #f0eefb, #faf7ef);
+    border: 1px solid #e5e1f0;
+    color: #3C3489;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex: none;
+  }
+  #suggestions .suggestion-item .s-name, #mobileSuggestions .suggestion-item .s-name {
+    font-size: 13px;
+    font-weight: 500;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #suggestions .suggestion-item .s-price, #mobileSuggestions .suggestion-item .s-price {
+    font-size: 13px;
+    font-weight: 700;
+    color: #3C3489;
+  }
+  #suggestions .view-all, #mobileSuggestions .view-all {
+    display: block;
+    text-align: center;
+    padding: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #3C3489;
+    text-decoration: none;
+    border-top: 1px solid #f0ede6;
+  }
+  #suggestions .view-all:hover, #mobileSuggestions .view-all:hover { background: #f5f3ed; }
+  #suggestions .suggestion-empty, #mobileSuggestions .suggestion-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 18px 14px;
+    font-size: 13px;
+    color: #999;
+    background: #fff;
+  }
+
+  /* ── Notification bell ── */
+  .ntf-bell {
+    position: relative;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(212, 175, 55, 0.45);
+    border-radius: 10px;
+    color: #F5C76F;
+    width: 32px; height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: background .15s, transform .15s;
+    flex: none;
+  }
+  .ntf-bell:hover { background: rgba(255, 255, 255, 0.14); transform: scale(1.05); }
+  @keyframes ntfBellBlink {
+    0%, 100% { color: #F5C76F; }
+    50% { color: #fff; text-shadow: 0 0 10px rgba(245, 199, 111, 0.9); }
+  }
+  .ntf-bell.ntf-blink i {
+    animation: ntfBellBlink 1.2s ease-in-out infinite;
+  }
+  .ntf-bell .ntf-badge {
+    position: absolute;
+    top: -6px; right: -7px;
+    min-width: 18px; height: 18px;
+    padding: 0 4px;
+    border-radius: 9px;
+    background: linear-gradient(145deg, #ff5f6d, #d90429);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 18px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(217, 4, 41, 0.45);
+  }
+  .ntf-bell .ntf-badge.ntf-empty { display: none; }
+
+  /* ── Notification panel ── */
+  .ntf-panel {
+    position: fixed;
+    z-index: 99999;
+    width: 360px;
+    max-width: calc(100vw - 20px);
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(10, 6, 30, 0.35), 0 0 0 1px rgba(212, 175, 55, 0.25);
+    overflow: hidden;
+    font-variant: normal;
+    animation: ntfPop .16s ease;
+  }
+  @keyframes ntfPop { from { opacity: 0; transform: translateY(-6px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  .ntf-panel-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px;
+    padding: 13px 16px;
+    background: linear-gradient(135deg, #0e0a23, #241a4f);
+    color: #F5C76F;
+  }
+  .ntf-panel-title { font-weight: 800; font-size: 14px; letter-spacing: .4px; text-transform: uppercase; }
+  .ntf-panel-title i { margin-right: 6px; }
+  .ntf-mark-all {
+    background: transparent; border: 1px solid rgba(212, 175, 55, .5);
+    color: #F5C76F; font-size: 11px; font-weight: 700;
+    border-radius: 20px; padding: 5px 12px; cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .ntf-mark-all:hover { background: #F5C76F; color: #171136; }
+  .ntf-actions { display: flex; align-items: center; gap: 6px; }
+  .ntf-delete-all {
+    background: #dc3545; border: 1px solid #dc3545;
+    color: #fff; font-size: 11px; font-weight: 700;
+    border-radius: 20px; padding: 5px 12px; cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .ntf-delete-all:hover { background: #b02a37; color: #fff; border-color: #b02a37; }
+  .ntf-panel-body { max-height: min(420px, 60vh); overflow-y: auto; }
+  .ntf-list { display: flex; flex-direction: column; }
+  .ntf-item {
+    position: relative;
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 13px 14px 13px 16px;
+    border-bottom: 1px solid #f0ede6;
+    cursor: pointer;
+    transition: background .12s;
+  }
+  .ntf-item:hover { background: #faf8f2; }
+  .ntf-item.ntf-unread { background: #fdf7e9; border-left: 3px solid #F5C76F; }
+  .ntf-item.ntf-unread:hover { background: #faf0d6; }
+  .ntf-icon {
+    flex: none; width: 38px; height: 38px; border-radius: 10px;
+    background: linear-gradient(135deg, #f0eefb, #faf7ef);
+    border: 1px solid #e5e1f0; color: #3C3489;
+    display: flex; align-items: center; justify-content: center; font-size: 15px;
+  }
+  .ntf-body { flex: 1; min-width: 0; }
+  .ntf-title { font-size: 13px; font-weight: 700; color: #1a1a1a; }
+  .ntf-item.ntf-unread .ntf-title { color: #171136; }
+  .ntf-msg { font-size: 12px; color: #666; margin-top: 2px; line-height: 1.45; }
+  .ntf-time { font-size: 11px; color: #aaa; margin-top: 4px; }
+  .ntf-del {
+    flex: none; width: 28px; height: 28px; border-radius: 8px;
+    background: transparent; border: none; color: #d90429; font-size: 13px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: color .12s, background .12s; margin-top: 2px;
+  }
+  .ntf-del:hover { color: #d90429; background: #fdecec; }
+  .ntf-empty { padding: 40px 20px; text-align: center; color: #aaa; }
+  .ntf-empty i { font-size: 30px; display: block; margin-bottom: 10px; color: #ccc; }
+  .ntf-empty p { margin: 0; font-size: 13px; }
+  .ntf-loading { padding: 30px; text-align: center; color: #888; font-size: 13px; }
+
+  .mobile-topbar-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    gap: 10px;
+  }
+  .mobile-topbar-row .ntf-bell {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  @media (max-width: 767.98px) {
+    .ntf-bell { width: 34px; height: 34px; font-size: .9rem; }
+  }
+</style>
+
+<nav class="navbar navbar-expand-lg fixed-top premium-nav">
+  <div class="container-fluid">
+    <!-- Brand -->
+    <a class="brand-gold" href="{% url 'home' %}">
+      <span class="brand-icon"><i class="fa fa-cart-plus"></i></span>
+      KaviBazaar
+    </a>
+
+    <!-- Toggler -->
+    <button class="navbar-toggler nav-toggle" type="button" data-bs-toggle="collapse"
+            data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup"
+            aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <!-- Collapse Content -->
+    <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+
+      <!-- Search Bar with Autocomplete -->
+      {% if not request.user.is_staff %}
+      <div class="search-wrap my-2 my-lg-0">
+        <form action="{% url 'search' %}" method="GET" class="d-flex">
+          {% if search_scope != 'products' %}<input type="hidden" name="scope" value="{{ search_scope }}">{% endif %}
+          {% if search_category %}<input type="hidden" name="category" value="{{ search_category }}">{% endif %}
+          <div class="input-group search-glass">
+            <button type="submit" class="btn search-btn" aria-label="Search"><i class="fa fa-search"></i></button>
+            <input type="text" name="q" id="searchInput" value="{{ request.GET.q }}"
+                   class="form-control" autocomplete="off"
+                   placeholder="Search for products, brands...">
+            <button type="button" class="btn mic-btn" aria-label="Voice search" aria-pressed="false" title="Voice search"><i class="fa fa-microphone"></i></button>
+          </div>
+        </form>
+        <div id="suggestions" class="position-absolute w-100" style="z-index:9999;display:none;top:100%;left:0;"></div>
+      </div>
+      {% endif %}
+
+      <!-- Nav Links -->
+      <div class="navbar-nav ms-auto nav-links">
+
+        {% if request.user.is_authenticated %}
+        <button type="button" class="ntf-bell" id="ntfBellDesktop" aria-label="Notifications" aria-haspopup="true" aria-expanded="false" title="Notifications">
+          <i class="fa fa-bell"></i>
+          <span class="ntf-badge {% if not unread_notifications_count %}ntf-empty{% endif %}" id="ntfBadgeDesktop">{{ unread_notifications_count }}</span>
+        </button>
+        {% endif %}
+
+        {% if request.user.is_authenticated and request.user.is_staff %}
+
+        {% if request.user.is_superuser or dashboard_access %}
+        <a href="{% url 'admin_dashboard' %}"
+           class="premium-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">
+          <i class="fa fa-dashboard"></i> Dashboard
+        </a>
+        {% endif %}
+
+        {% if perms.shop.view_product %}
+        <a href="{% url 'admin_products' %}"
+           class="premium-link {% if 'product' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="fa fa-shopping-bag"></i> Products
+        </a>
+        {% endif %}
+
+        {% if perms.shop.view_catagory %}
+        <a href="{% url 'admin_categories' %}"
+           class="premium-link {% if 'categor' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="fa fa-tags"></i> Categories
+        </a>
+        {% endif %}
+
+        {% if perms.shop.view_order %}
+        <a href="{% url 'admin_orders' %}"
+           class="premium-link {% if 'order' in request.resolver_match.url_name %}active{% endif %}">
+          <i class="fa fa-list-alt"></i> Orders
+        </a>
+        {% endif %}
+
+        {% if perms.shop.change_product %}
+        <a href="{% url 'low_stock' %}"
+           class="premium-link {% if request.resolver_match.url_name == 'low_stock' %}active{% endif %}">
+          <i class="fa fa-exclamation-triangle"></i> Low Stock
+        </a>
+        {% endif %}
+
+        <a href="{% url 'logout' %}" class="premium-link">
+          <i class="fa fa-sign-out"></i> Logout
+        </a>
+
+        {% else %}
+
+        <a href="{% url 'home' %}"
+           class="premium-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+          <i class="fa fa-home"></i> Home
+        </a>
+
+        <a href="{% url 'collections' %}"
+           class="premium-link {% if request.resolver_match.url_name == 'collections' %}active{% endif %}">
+          <i class="fa fa-cubes"></i> Collections
+        </a>
+
+        {% if request.user.is_authenticated %}
+        <a href="{% url 'profile' %}"
+           class="premium-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+          {% if profile_picture %}
+          <img src="{{ profile_picture }}" class="nav-avatar" alt="">
+          {% else %}
+          <span class="nav-avatar">{{ request.user.first_name|default:request.user.username|slice:":1"|upper }}</span>
+          {% endif %} Profile
+        </a>
+
+        <a href="{% url 'my_orders' %}"
+           class="premium-link {% if request.resolver_match.url_name == 'my_orders' %}active{% endif %}">
+          <i class="fa fa-list-alt"></i> My Orders
+        </a>
+
+        <a href="{% url 'favviewpage' %}"
+           class="premium-link {% if request.resolver_match.url_name == 'favviewpage' %}active{% endif %}">
+          <i class="fa fa-heart"></i> Favourite
+        </a>
+
+        <a href="{% url 'cart' %}" class="gold-pill">
+          <i class="fa fa-shopping-cart"></i> Cart
+        </a>
+        {% else %}
+        <a href="{% url 'login' %}" class="premium-link">
+          <i class="fa fa-sign-in"></i> Login
+        </a>
+        {% endif %}
+
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile top bar: brand + search (phones/tablets) -->
+<div class="mobile-topbar">
+  <div class="mobile-topbar-row">
+    <a class="brand-gold" href="{% url 'home' %}">
+      <span class="brand-icon"><i class="fa fa-cart-plus"></i></span>
+      KaviBazaar
+    </a>
+    {% if request.user.is_authenticated %}
+    <button type="button" class="ntf-bell" id="ntfBellMobile" aria-label="Notifications" aria-haspopup="true" aria-expanded="false" title="Notifications">
+      <i class="fa fa-bell"></i>
+      <span class="ntf-badge {% if not unread_notifications_count %}ntf-empty{% endif %}" id="ntfBadgeMobile">{{ unread_notifications_count }}</span>
+    </button>
+    {% endif %}
+  </div>
+  {% if not request.user.is_staff %}
+  <div class="search-wrap">
+    <form action="{% url 'search' %}" method="GET" class="d-flex">
+      {% if search_scope != 'products' %}<input type="hidden" name="scope" value="{{ search_scope }}">{% endif %}
+      {% if search_category %}<input type="hidden" name="category" value="{{ search_category }}">{% endif %}
+      <div class="input-group search-glass">
+        <button type="submit" class="btn search-btn" aria-label="Search"><i class="fa fa-search"></i></button>
+        <input type="text" name="q" id="mobileTopSearchInput" class="form-control"
+               autocomplete="off" placeholder="Search for products, brands...">
+        <button type="button" class="btn mic-btn" aria-label="Voice search" aria-pressed="false" title="Voice search"><i class="fa fa-microphone"></i></button>
+      </div>
+    </form>
+    <div id="mobileSuggestions" class="position-absolute w-100" style="z-index:9999;display:none;top:100%;left:0;"></div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Flipkart-style bottom navigation (mobile) -->
+<nav class="bottom-nav {% if request.user.is_authenticated and request.user.is_staff %}bottom-nav-wide{% endif %}" aria-label="Mobile navigation">
+  <div class="bottom-nav-inner">
+
+    {% if request.user.is_authenticated and request.user.is_staff %}
+
+    {% if request.user.is_superuser or dashboard_access %}
+    <a href="{% url 'admin_dashboard' %}"
+       class="bottom-tab {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">
+      <i class="fa fa-dashboard"></i> Dashboard
+    </a>
+    {% endif %}
+
+    {% if perms.shop.view_product %}
+    <a href="{% url 'admin_products' %}"
+       class="bottom-tab {% if 'product' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="fa fa-shopping-bag"></i> Products
+    </a>
+    {% endif %}
+
+    {% if perms.shop.view_catagory %}
+    <a href="{% url 'admin_categories' %}"
+       class="bottom-tab {% if 'categor' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="fa fa-tags"></i> Categories
+    </a>
+    {% endif %}
+
+    {% if perms.shop.view_order %}
+    <a href="{% url 'admin_orders' %}"
+       class="bottom-tab {% if 'order' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="fa fa-list-alt"></i> Orders
+    </a>
+    {% endif %}
+
+    {% if perms.shop.view_payment %}
+    <a href="{% url 'admin_payments' %}"
+       class="bottom-tab {% if 'payment' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="fa fa-credit-card"></i> Payments
+    </a>
+    {% endif %}
+
+    {% if perms.shop.view_productrating %}
+    <a href="{% url 'admin_reviews' %}"
+       class="bottom-tab {% if 'review' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="fa fa-star"></i> Reviews
+    </a>
+    {% endif %}
+
+    {% if perms.shop.change_product %}
+    <a href="{% url 'low_stock' %}"
+       class="bottom-tab {% if request.resolver_match.url_name == 'low_stock' %}active{% endif %}">
+      <i class="fa fa-exclamation-triangle"></i> Low Stock
+    </a>
+    {% endif %}
+
+    {% if request.user.is_superuser %}
+    <a href="{% url 'admin_staff_permissions' %}"
+       class="bottom-tab {% if request.resolver_match.url_name == 'admin_staff_permissions' %}active{% endif %}">
+      <i class="fa fa-key"></i> Permissions
+    </a>
+    {% endif %}
+
+    {% if perms.shop.change_notification or request.user.is_superuser %}
+    <a href="{% url 'admin_send_announcement' %}"
+       class="bottom-tab {% if request.resolver_match.url_name == 'admin_send_announcement' %}active{% endif %}">
+      <i class="fa fa-bullhorn"></i> Send Announcement
+    </a>
+    {% endif %}
+
+    <a href="/admin/" class="bottom-tab {% if request.path == '/admin/' %}active{% endif %}">
+      <i class="fa fa-gears"></i> Django Admin
+    </a>
+
+    <a href="{% url 'logout' %}" class="bottom-tab">
+      <i class="fa fa-sign-out"></i> Logout
+    </a>
+
+    {% else %}
+
+    <a href="{% url 'home' %}"
+       class="bottom-tab {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+      <i class="fa fa-home"></i> Home
+    </a>
+
+    <a href="{% url 'collections' %}"
+       class="bottom-tab {% if request.resolver_match.url_name == 'collections' %}active{% endif %}">
+      <i class="fa fa-th-large"></i> Categories
+    </a>
+
+    <a href="{% url 'cart' %}"
+       class="bottom-tab {% if request.resolver_match.url_name == 'cart' %}active{% endif %}">
+      <span class="bottom-tab-icon">
+        <i class="fa fa-shopping-cart"></i>
+        {% if cart_count %}
+        <span class="bottom-cart-badge">{{ cart_count }}</span>
+        {% endif %}
+      </span>
+      Cart
+    </a>
+
+    {% if request.user.is_authenticated %}
+    <a href="{% url 'my_orders' %}"
+       class="bottom-tab {% if request.resolver_match.url_name == 'my_orders' %}active{% endif %}">
+      <i class="fa fa-list-alt"></i> Orders
+    </a>
+
+    <a href="{% url 'favviewpage' %}"
+       class="bottom-tab {% if request.resolver_match.url_name == 'favviewpage' %}active{% endif %}">
+      <i class="fa fa-heart"></i> Favourite
+    </a>
+
+    <a href="{% url 'profile' %}"
+       class="bottom-tab {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+      {% if profile_picture %}
+      <img src="{{ profile_picture }}" class="bottom-avatar" alt="">
+      {% else %}
+      <span class="bottom-avatar">{{ request.user.first_name|default:request.user.username|slice:":1"|upper }}</span>
+      {% endif %} Profile
+    </a>
+    {% else %}
+    <a href="{% url 'login' %}"
+       class="bottom-tab {% if request.resolver_match.url_name == 'login' %}active{% endif %}">
+      <i class="fa fa-user"></i> Login
+    </a>
+    {% endif %}
+
+    {% endif %}
+
+  </div>
+</nav>
+
+{% if request.user.is_authenticated %}
+<!-- Notification panel -->
+<div class="ntf-panel" id="ntfPanel" hidden>
+  <input type="hidden" id="ntfCsrf" value="{{ csrf_token }}">
+  <div class="ntf-panel-head">
+    <span class="ntf-panel-title"><i class="fa fa-bell"></i>Notifications</span>
+    <div class="ntf-actions">
+      <button type="button" class="ntf-mark-all" id="ntfMarkAll">Mark all read</button>
+      <button type="button" class="ntf-delete-all" id="ntfDeleteAll">Delete all</button>
+    </div>
+  </div>
+  <div class="ntf-panel-body" id="ntfPanelBody"></div>
+</div>
+{% endif %}
+
+<script>
+function setupAutocomplete(inputId, boxId) {
+  const input = document.getElementById(inputId);
+  const box = document.getElementById(boxId);
+  if (!input || !box) return;
+  let timer = null;
+
+  input.addEventListener('input', function() {
+    clearTimeout(timer);
+    const q = this.value.trim();
+    if (q.length < 1) { box.style.display = 'none'; return; }
+    const form = input.closest('form');
+    const scopeInput = form ? form.querySelector('input[name="scope"]') : null;
+    const catInput = form ? form.querySelector('input[name="category"]') : null;
+    const scope = scopeInput ? scopeInput.value : '';
+    const category = catInput ? catInput.value : '';
+    let url = '/search-autocomplete?q=' + encodeURIComponent(q);
+    if (scope) url += '&scope=' + encodeURIComponent(scope);
+    if (category) url += '&category=' + encodeURIComponent(category);
+    let viewAll = '/search?q=' + encodeURIComponent(q);
+    if (scope) viewAll += '&scope=' + encodeURIComponent(scope);
+    if (category) viewAll += '&category=' + encodeURIComponent(category);
+    timer = setTimeout(function() {
+      fetch(url)
+        .then(r => r.json())
+        .then(data => {
+          if (!data.length) {
+            box.innerHTML = '<div class="suggestion-empty"><i class="fa fa-search"></i> No data available</div>';
+            box.style.display = 'block';
+            return;
+          }
+          let html = '';
+          data.forEach(p => {
+            let img;
+            if (p.type === 'category') {
+              img = (p.image ? '<img src="' + p.image + '" alt="">' : '<span class="s-ic"><i class="fa fa-th-large"></i></span>');
+            } else if (p.type === 'order') {
+              img = '<span class="s-ic"><i class="fa fa-shopping-bag"></i></span>';
+            } else {
+              img = (p.image ? '<img src="' + p.image + '" alt="">' : '<span class="s-ic"><i class="fa fa-cube"></i></span>');
+            }
+            html += '<a href="' + p.url + '" class="suggestion-item">' + img +
+              '<span class="s-name">' + p.name + '</span>' +
+              '<span class="s-price">' + p.price + '</span>' +
+            '</a>';
+          });
+          html += '<a href="' + viewAll + '" class="view-all">View all results <i class="fa fa-arrow-right"></i></a>';
+          box.innerHTML = html;
+          box.style.display = 'block';
+        })
+        .catch(() => { box.style.display = 'none'; });
+    }, 60);
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!input.contains(e.target) && !box.contains(e.target)) {
+      box.style.display = 'none';
+    }
+  });
+  box.addEventListener('click', function() { box.style.display = 'none'; });
+}
+
+setupAutocomplete('searchInput', 'suggestions');
+setupAutocomplete('mobileTopSearchInput', 'mobileSuggestions');
+
+document.querySelectorAll('.search-glass form').forEach(function(form) {
+  form.addEventListener('submit', function() {
+    var btn = this.querySelector('button[type="submit"]');
+    if (btn) btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
+  });
+});
+
+function initVoiceSearch(inputId) {
+  var input = document.getElementById(inputId);
+  if (!input) return;
+  var glass = input.closest('.search-glass');
+  if (!glass) return;
+  var btn = glass.querySelector('.mic-btn');
+  if (!btn) return;
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    btn.addEventListener('click', function() {
+      alert('Voice typing is not supported in this browser. Please use Chrome or Safari.');
+    });
+    return;
+  }
+  var rec = new SR();
+  rec.lang = 'en-US';
+  rec.continuous = true;
+  rec.interimResults = true;
+  var listening = false;
+  var finalText = '';
+
+  function stopUI() {
+    listening = false;
+    btn.classList.remove('listening');
+    btn.setAttribute('aria-pressed', 'false');
+    btn.title = 'Voice search';
+  }
+
+  btn.addEventListener('click', function() {
+    if (listening) { rec.stop(); return; }
+    finalText = '';
+    listening = true;
+    btn.classList.add('listening');
+    btn.setAttribute('aria-pressed', 'true');
+    btn.title = 'Stop voice search';
+    try { rec.start(); }
+    catch (e) { stopUI(); }
+  });
+
+  rec.onstart = function() {
+    listening = true;
+    btn.classList.add('listening');
+    btn.setAttribute('aria-pressed', 'true');
+  };
+
+  rec.onresult = function(event) {
+    var interim = '';
+    for (var i = event.resultIndex; i < event.results.length; i++) {
+      if (event.results[i].isFinal) finalText += event.results[i][0].transcript;
+      else interim += event.results[i][0].transcript;
+    }
+    input.value = finalText + interim;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+
+  rec.onend = function() { stopUI(); };
+
+  rec.onerror = function(e) {
+    if (e.error === 'no-speech' || e.error === 'not-allowed') { /* keep recognized text */ }
+    try { rec.stop(); } catch (err) {}
+  };
+}
+
+initVoiceSearch('searchInput');
+initVoiceSearch('mobileTopSearchInput');
+
+(function() {
+  var panel = document.getElementById('ntfPanel');
+  var panelBody = document.getElementById('ntfPanelBody');
+  if (!panel) return;
+
+  function csrfToken() {
+    var el = document.getElementById('ntfCsrf');
+    return el ? el.value : '';
+  }
+
+  var badges = [];
+  var bellD = document.getElementById('ntfBellDesktop');
+  var bellM = document.getElementById('ntfBellMobile');
+  var bells = [];
+  if (bellD) { bells.push(bellD); badges.push(document.getElementById('ntfBadgeDesktop')); }
+  if (bellM) { bells.push(bellM); badges.push(document.getElementById('ntfBadgeMobile')); }
+
+  function setBadge(count) {
+    count = count || 0;
+    badges.forEach(function(b) {
+      if (!b) return;
+      b.textContent = count > 99 ? '99+' : count;
+      b.classList.toggle('ntf-empty', !count);
+    });
+    bells.forEach(function(b) {
+      if (b) b.classList.toggle('ntf-blink', count > 0);
+    });
+  }
+
+  function post(url, cb) {
+    fetch(url, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrfToken() },
+      credentials: 'same-origin'
+    }).then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d && typeof d.unread_count !== 'undefined') setBadge(d.unread_count);
+        if (cb) cb(d);
+      }).catch(function() {});
+  }
+
+  function positionPanel(bell) {
+    var r = bell.getBoundingClientRect();
+    var w = panel.offsetWidth || 360;
+    var vw = window.innerWidth;
+    var left = r.left;
+    if (left + w > vw - 8) left = Math.max(8, vw - w - 8);
+    panel.style.left = left + 'px';
+    panel.style.top = (r.bottom + 8) + 'px';
+  }
+
+  function openPanel(bell) {
+    if (panel.classList.contains('ntf-open')) { closePanel(); return; }
+    panel.classList.add('ntf-open');
+    panel.hidden = false;
+    positionPanel(bell);
+    bells.forEach(function(b) { b.setAttribute('aria-expanded', 'true'); });
+    loadNotifications(true);
+  }
+
+  function closePanel() {
+    panel.classList.remove('ntf-open');
+    panel.hidden = true;
+    bells.forEach(function(b) { b.setAttribute('aria-expanded', 'false'); });
+  }
+
+  function loadNotifications(autoRead) {
+    panelBody.innerHTML = '<div class="ntf-loading"><i class="fa fa-spinner fa-spin"></i> Loading notifications...</div>';
+    fetch('/notifications/data', { credentials: 'same-origin' })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        setBadge(d.unread_count || 0);
+        panelBody.innerHTML = d.html || '';
+        wirePanel();
+        if (autoRead && d.unread_count > 0) {
+          post('/notifications/read-all', function() {
+            panelBody.querySelectorAll('.ntf-item.ntf-unread').forEach(function(it) { it.classList.remove('ntf-unread'); });
+            setBadge(0);
+          });
+        }
+      })
+      .catch(function() {
+        panelBody.innerHTML = '<div class="ntf-loading">Could not load notifications.</div>';
+      });
+  }
+
+  function wirePanel() {
+    panelBody.querySelectorAll('.ntf-item').forEach(function(item) {
+      item.addEventListener('click', function(e) {
+        if (e.target.closest('.ntf-del')) return;
+        var id = item.getAttribute('data-id');
+        if (id) post('/notifications/read/' + id);
+        item.classList.remove('ntf-unread');
+        var link = item.getAttribute('data-link');
+        if (link) { window.location.href = link; return; }
+        closePanel();
+      });
+      var del = item.querySelector('.ntf-del');
+      if (del) {
+        del.addEventListener('click', function(e) {
+          e.stopPropagation();
+          var id = item.getAttribute('data-id');
+          post('/notifications/delete/' + id, function() {
+            item.remove();
+            if (!panelBody.querySelector('.ntf-item')) {
+              panelBody.innerHTML = '<div class="ntf-empty"><i class="fa fa-bell-slash"></i><p>No notifications yet.</p></div>';
+            }
+          });
+        });
+      }
+    });
+  }
+
+  bells.forEach(function(bell) {
+    bell.addEventListener('click', function(e) {
+      e.stopPropagation();
+      openPanel(bell);
+    });
+  });
+
+  var hasUnread = badges.some(function(b) { return b && !b.classList.contains('ntf-empty'); });
+  bells.forEach(function(b) { if (b) b.classList.toggle('ntf-blink', hasUnread); });
+
+  var markAllBtn = document.getElementById('ntfMarkAll');
+  if (markAllBtn) {
+    markAllBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      post('/notifications/read-all', function() {
+        panelBody.querySelectorAll('.ntf-item.ntf-unread').forEach(function(it) { it.classList.remove('ntf-unread'); });
+        setBadge(0);
+      });
+    });
+  }
+
+  var deleteAllBtn = document.getElementById('ntfDeleteAll');
+  if (deleteAllBtn) {
+    deleteAllBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var proceed = function() {
+        post('/notifications/delete-all', function() {
+          panelBody.innerHTML = '<div class="ntf-empty"><i class="fa fa-bell-slash"></i><p>No notifications yet.</p></div>';
+          setBadge(0);
+        });
+      };
+      if (window.premiumConfirm) {
+        premiumConfirm({
+          title: 'Delete All Notifications?',
+          message: 'Are you sure you want to delete all notifications? This action cannot be undone.',
+          confirmText: 'Delete',
+          confirmIcon: 'fa-trash'
+        }).then(function(ok) {
+          if (ok) proceed();
+        });
+      } else if (window.confirm('Are you sure you want to delete all notifications? This action cannot be undone.')) {
+        proceed();
+      }
+    });
+  }
+
+  document.addEventListener('click', function(e) {
+    if (panel.classList.contains('ntf-open') && !panel.contains(e.target)) {
+      var clickedBell = bells.some(function(b) { return b.contains(e.target); });
+      if (!clickedBell && !e.target.closest('#premiumConfirmModal')) closePanel();
+    }
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closePanel();
+  });
+
+  var pollTimer = setInterval(function() {
+    if (!document.body.contains(panel)) { clearInterval(pollTimer); return; }
+    fetch('/notifications/data', { credentials: 'same-origin' })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (typeof d.unread_count !== 'undefined') setBadge(d.unread_count);
+        if (panel.classList.contains('ntf-open')) {
+          panelBody.innerHTML = d.html || '';
+          wirePanel();
+        }
+      }).catch(function() {});
+  }, 30000);
+
+  window.addEventListener('resize', function() {
+    if (panel.classList.contains('ntf-open')) {
+      var openBell = bells.filter(function(b) { return b.getAttribute('aria-expanded') === 'true'; })[0];
+      if (openBell) positionPanel(openBell);
+    }
+  });
+})();
+</script>

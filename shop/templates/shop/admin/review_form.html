@@ -1,0 +1,55 @@
+{% extends 'shop/admin/base.html' %}
+{% load user_filters %}
+{% block title %}Edit Review{% endblock %}
+{% block page_title %}Edit Review{% endblock %}
+{% block content %}
+
+<div class="card-custom" style="max-width:560px;">
+  <div class="card-body">
+    <form method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <div style="font-size:13px;color:#a9a2d0;margin-bottom:18px;line-height:1.8;">
+        <strong style="color:#fff;">{{ review.product.name }}</strong><br>
+        By {{ review.user|display_name }} &middot; {{ review.created_at|date:"d M Y" }}
+      </div>
+
+      <div class="mb-3">
+        <label>Rating</label>
+        <select name="rating" class="form-select form-select-sm-custom w-100" style="border-radius:8px;">
+          {% for i in "12345" %}
+          <option value="{{ forloop.counter }}" {% if review.rating == forloop.counter %}selected{% endif %}>{{ forloop.counter }} star{{ forloop.counter|pluralize }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label>Comment</label>
+        <textarea name="comment" rows="4" class="form-control form-control-sm-custom w-100" maxlength="500">{{ review.comment }}</textarea>
+      </div>
+
+      <div class="mb-3">
+        <label>Photo</label>
+        {% if review.image %}
+        <div class="mb-2">
+          <img src="{{ review.image.url }}" style="width:96px;height:96px;object-fit:cover;border-radius:12px;border:1px solid rgba(245,199,111,.25);" alt="">
+        </div>
+        <div class="form-check mb-2">
+          <input type="checkbox" name="remove_image" id="removeImage" class="form-check-input">
+          <label class="form-check-label" for="removeImage" style="font-size:13px;color:#ff8d8d;">
+            <i class="fa fa-trash"></i> Delete this photo only
+          </label>
+        </div>
+        {% endif %}
+        <input type="file" name="image" accept="image/*" class="form-control form-control-sm-custom w-100">
+      </div>
+
+      <div style="display:flex;gap:10px;">
+        <button type="submit" class="btn btn-dark btn-sm" style="border-radius:8px;"><i class="fa fa-save"></i> Save Review</button>
+        <a href="{% url 'admin_reviews' %}" class="btn btn-outline-secondary btn-sm" style="border-radius:8px;">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

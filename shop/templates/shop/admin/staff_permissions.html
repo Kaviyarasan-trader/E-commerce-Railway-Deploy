@@ -1,0 +1,98 @@
+{% extends 'shop/admin/base.html' %}
+{% block title %}Staff Permissions{% endblock %}
+{% block page_title %}Staff Permissions{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3" style="flex-wrap:wrap;gap:10px;">
+  <div style="font-size:13px;color:#a9a2d0;">
+    Tick a section to show it in that admin's sidebar. Superusers always see everything.
+  </div>
+  <button type="submit" form="permForm" class="btn btn-dark btn-sm" style="border-radius:8px;">
+    <i class="fa fa-save"></i> Save Changes
+  </button>
+</div>
+
+<div class="card-custom">
+  <div class="card-body p-0" style="overflow-x:auto;">
+    <form method="POST" action="{% url 'admin_staff_permissions' %}" id="permForm">
+      {% csrf_token %}
+      <table class="table table-custom">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th style="text-align:center;">Dashboard</th>
+            <th style="text-align:center;">Products</th>
+            <th style="text-align:center;">Categories</th>
+            <th style="text-align:center;">Orders</th>
+            <th style="text-align:center;">Payments</th>
+            <th style="text-align:center;">Reviews</th>
+            <th style="text-align:center;">Low Stock</th>
+            <th style="text-align:center;">Send Announcement</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            <td data-label="User">
+              <strong>{{ row.user.username }}</strong>
+              <div style="font-size:12px;color:#a9a2d0;">
+                {% if row.user.is_superuser %}Superuser — full access{% else %}{{ row.user.email|default:'—' }}{% endif %}
+              </div>
+            </td>
+            {% if row.user.is_superuser %}
+            <td style="text-align:center;">✓</td>
+            <td style="text-align:center;">✓</td>
+            <td style="text-align:center;">✓</td>
+            <td style="text-align:center;">✓</td>
+            <td style="text-align:center;">✓</td>
+            <td style="text-align:center;">✓</td>
+            <td style="text-align:center;">✓</td>
+            <td style="text-align:center;">✓</td>
+            {% else %}
+            <td style="text-align:center;">
+              <input type="checkbox" name="section_{{ row.user.id }}_dashboard" class="form-check-input" {% if row.dashboard %}checked{% endif %}>
+            </td>
+            <td style="text-align:center;">
+              <input type="checkbox" name="section_{{ row.user.id }}_products" class="form-check-input" {% if row.products %}checked{% endif %}>
+            </td>
+            <td style="text-align:center;">
+              <input type="checkbox" name="section_{{ row.user.id }}_categories" class="form-check-input" {% if row.categories %}checked{% endif %}>
+            </td>
+            <td style="text-align:center;">
+              <input type="checkbox" name="section_{{ row.user.id }}_orders" class="form-check-input" {% if row.orders %}checked{% endif %}>
+            </td>
+            <td style="text-align:center;">
+              <input type="checkbox" name="section_{{ row.user.id }}_payments" class="form-check-input" {% if row.payments %}checked{% endif %}>
+            </td>
+            <td style="text-align:center;">
+              <input type="checkbox" name="section_{{ row.user.id }}_reviews" class="form-check-input" {% if row.reviews %}checked{% endif %}>
+            </td>
+            <td style="text-align:center;">
+              <input type="checkbox" name="section_{{ row.user.id }}_low_stock" class="form-check-input" {% if row.low_stock %}checked{% endif %}>
+            </td>
+            <td style="text-align:center;">
+              <input type="checkbox" name="section_{{ row.user.id }}_send_announcement" class="form-check-input" {% if row.send_announcement %}checked{% endif %}>
+            </td>
+            {% endif %}
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="9" style="text-align:center;color:#8f86bd;padding:40px;">
+              <i class="fa fa-users" style="font-size:32px;display:block;margin-bottom:10px;"></i>
+              No staff users yet.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </form>
+  </div>
+</div>
+
+<div style="font-size:12px;color:#6f6799;margin-top:12px;line-height:1.6;">
+  Tick a section to show that page in the admin's sidebar. Products and Low Stock share the same change permission, so Low Stock is shown whenever Products is ticked. Payments requires the view_payment permission.<br>
+  A user with at least one section ticked can log into the admin. Unticking a section hides that page immediately; unticking every section leaves the user listed here but with no admin pages. Superusers always see everything.<br>
+  Add a brand-new admin in the Django admin (/admin/) by checking "Staff status", then tick sections here. Superuser status can only be changed in the Django admin.
+</div>
+
+{% endblock %}

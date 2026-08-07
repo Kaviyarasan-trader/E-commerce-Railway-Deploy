@@ -1,0 +1,42 @@
+{% load user_filters %}
+<tbody>
+  {% for r in reviews %}
+  <tr>
+    <td data-label="Product">
+      <strong>{{ r.product.name }}</strong><br>
+      <span style="font-size:11px;color:#8f86bd;">#{{ r.product.id }}</span>
+    </td>
+    <td data-label="User">{{ r.user|display_name }}</td>
+    <td data-label="Rating">
+      <span style="color:#F5C76F;letter-spacing:2px;white-space:nowrap;">
+        {% for i in "12345" %}<i class="fa {% if forloop.counter <= r.rating %}fa-star{% else %}fa-star-o{% endif %}"></i>{% endfor %}
+      </span>
+    </td>
+    <td data-label="Comment" style="max-width:240px;color:#a9a2d0;">{{ r.comment|default:'—' }}</td>
+    <td data-label="Photo">
+      {% if r.image %}
+      <img src="{{ r.image.url }}" style="width:40px;height:40px;object-fit:cover;border-radius:8px;border:1px solid rgba(245,199,111,.2);" alt="">
+      {% else %}
+      <span style="color:#6f6799;">—</span>
+      {% endif %}
+    </td>
+    <td data-label="Date" style="font-size:12px;color:#a9a2d0;white-space:nowrap;">{{ r.created_at|date:"d M Y" }}</td>
+    <td class="actions" style="white-space:nowrap;">
+      {% if perms.shop.change_productrating %}
+      <a href="{% url 'admin_review_edit' r.id %}" class="btn btn-outline-secondary btn-action btn-sm"><i class="fa fa-pencil"></i> Edit</a>
+      {% endif %}
+      {% if perms.shop.delete_productrating %}
+      <a href="{% url 'admin_review_delete' r.id %}" class="btn btn-outline-danger btn-action btn-sm"
+         onclick="return premiumConfirmAction('Delete review by {{ r.user.username }}?', this, { title: 'Delete Review?', confirmText: 'Delete', confirmIcon: 'fa-trash' })"><i class="fa fa-trash"></i> Delete</a>
+      {% endif %}
+    </td>
+  </tr>
+  {% empty %}
+  <tr>
+    <td colspan="7" style="text-align:center;color:#8f86bd;padding:40px;">
+      <i class="fa fa-star-o" style="font-size:32px;display:block;margin-bottom:10px;"></i>
+      {% if query or rating_filter %}No reviews matching your filters{% else %}No reviews yet{% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</tbody>

@@ -1,0 +1,801 @@
+{% extends 'shop/admin/base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="icon"><i class="fa fa-shopping-bag"></i></div>
+      <div>
+        <div class="stat-num">{{ total_products }}</div>
+        <div class="stat-label">Products</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="icon"><i class="fa fa-tags"></i></div>
+      <div>
+        <div class="stat-num">{{ total_categories }}</div>
+        <div class="stat-label">Categories</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="icon"><i class="fa fa-list-alt"></i></div>
+      <div>
+        <div class="stat-num">{{ total_orders }}</div>
+        <div class="stat-label">Orders</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="icon"><i class="fa fa-money"></i></div>
+      <div>
+        <div class="stat-num">Rs.{{ total_all_revenue|floatformat:0 }}</div>
+        <div class="stat-label">All Revenue</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="icon"><i class="fa fa-clock-o"></i></div>
+      <div>
+        <div class="stat-num">Rs.{{ total_processing_revenue|floatformat:0 }}</div>
+        <div class="stat-label">Processing Revenue</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="icon"><i class="fa fa-truck"></i></div>
+      <div>
+        <div class="stat-num">Rs.{{ total_shipped_revenue|floatformat:0 }}</div>
+        <div class="stat-label">Shipped Revenue</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="icon"><i class="fa fa-rupee"></i></div>
+      <div>
+        <div class="stat-num">Rs.{{ total_delivered_revenue|floatformat:0 }}</div>
+        <div class="stat-label">Delivered Revenue</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="icon"><i class="fa fa-exclamation-triangle"></i></div>
+      <div>
+        <div class="stat-num">{{ pending_count }}</div>
+        <div class="stat-label">Pending Orders</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- Revenue Trend -->
+  <div class="col-12">
+    <div class="card-custom">
+      <div class="card-header">Revenue Trend &mdash; Last 6 Months</div>
+      <div class="card-body">
+        <div class="row g-3 align-items-center">
+          <div class="col-md-8" style="position:relative;">
+            <canvas id="revenueTrendChart" height="100"></canvas>
+            <div id="trendRocket" style="position:absolute;left:0;top:0;pointer-events:none;z-index:5;transform-origin:30px 62px;--rk-blast:0;">
+              <div class="rk-vibe">
+                <svg id="trendRocketSvg" width="60" height="92" viewBox="0 0 60 92" style="display:block;">
+                  <path d="M30 2 C38 14 42 21 42 28 L18 28 C18 21 22 14 30 2 Z" fill="#ffffff"/>
+                  <path d="M18 28 L18 62 Q18 66 22 66 L38 66 Q42 66 42 62 L42 28 Z" fill="#ffffff"/>
+                  <circle cx="30" cy="42" r="8" fill="#17112f"/>
+                  <path d="M18 50 L5 70 L18 64 Z" fill="#ffffff"/>
+                  <path d="M42 50 L55 70 L42 64 Z" fill="#ffffff"/>
+                  <g class="rk-flame">
+                    <path class="rk-flame-outer" d="M22 64 Q30 92 38 64 Z" fill="#FF7E3D"/>
+                    <path class="rk-flame-mid" d="M25 64 Q30 84 35 64 Z" fill="#FFC53D"/>
+                    <path class="rk-flame-core" d="M27 64 Q30 76 33 64 Z" fill="#FFF7E0"/>
+                  </g>
+                </svg>
+              </div>
+            </div>
+            <div id="trendBoom" style="position:absolute;left:0;top:0;width:0;height:0;pointer-events:none;z-index:6;">
+              <div class="boom-flash"></div>
+              <div class="boom-ring"></div>
+              <div class="boom-ring boom-ring-2"></div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div style="position:relative;max-width:230px;margin:0 auto;">
+              <canvas id="revenueMonthDonut"></canvas>
+              <div id="monthDonutCenter" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;">
+                <div id="monthDonutTotal" style="font-size:18px;font-weight:800;color:#F5C76F;white-space:nowrap;">Rs. 0</div>
+                <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#a9a2d0;font-weight:700;">Total</div>
+              </div>
+            </div>
+            <div id="monthDonutLegend" style="margin-top:12px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .12em;
+    color: #7bd6a5;
+    text-transform: uppercase;
+  }
+  .live-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #28a745;
+    box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.6);
+    animation: livePulse 1.6s ease-out infinite;
+  }
+  .live-badge.paused .live-dot { animation: none; background: #8f86bd; }
+  .live-ctrl-btn {
+    width: 26px; height: 26px;
+    border-radius: 8px;
+    border: 1px solid rgba(245, 199, 111, 0.45);
+    background: rgba(245, 199, 111, 0.1);
+    color: #F5C76F;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background .15s, color .15s, transform .12s;
+  }
+  .live-ctrl-btn:hover { background: linear-gradient(145deg, #F5C76F, #D4AF37); color: #171136; }
+  .live-ctrl-btn:active { transform: scale(.94); }
+  @keyframes livePulse {
+    0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.55); }
+    70% { box-shadow: 0 0 0 8px rgba(40, 167, 69, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+  }
+  .live-ticker {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    padding: 0 0 10px;
+    margin-bottom: 6px;
+    border-bottom: 1px dashed rgba(212, 175, 55, 0.22);
+  }
+  .live-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 84px;
+  }
+  .live-cell-label {
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: #a9a2d0;
+    font-weight: 700;
+  }
+  .live-cell-val {
+    font-size: 14px;
+    font-weight: 800;
+    color: #fff;
+    font-variant: normal;
+    font-family: 'Sora', 'Manrope', sans-serif;
+  }
+  .live-cell-val.gold {
+    background: linear-gradient(120deg, #ffffff 30%, #F5C76F 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .live-cell-val.cyan {
+    color: #3DE0C8;
+  }
+  .live-legend {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    color: #a9a2d0;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .live-legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #3DE0C8;
+    box-shadow: 0 0 6px rgba(61, 224, 200, 0.6);
+  }
+  .live-legend-dot.purple {
+    background: #6B5BD6;
+    box-shadow: 0 0 6px rgba(107, 91, 214, 0.6);
+  }
+  .live-chart-wrap {
+    position: relative;
+    width: 100%;
+    height: 170px;
+  }
+  .rk-vibe {
+    animation: rocketVibe 0.12s linear infinite;
+  }
+  @keyframes rocketVibe {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(1.6px); }
+  }
+  #trendRocketSvg {
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.95));
+  }
+  .rk-flame path {
+    transform-box: fill-box;
+    transform-origin: 50% 0%;
+    animation: flameFlicker 0.15s ease-in-out infinite;
+    filter: drop-shadow(0 0 10px rgba(255, 160, 60, 0.9));
+  }
+  .rk-flame-outer { animation: flameFlicker 0.18s ease-in-out infinite; }
+  .rk-flame-mid { animation: flameFlicker 0.13s ease-in-out infinite; }
+  .rk-flame-core { animation: flameFlicker 0.09s ease-in-out infinite; }
+  @keyframes flameFlicker {
+    0%, 100% { transform: scaleY(calc(0.85 + var(--rk-blast, 0))); opacity: calc(0.9 + var(--rk-blast, 0) * 0.1); }
+    50% { transform: scaleY(calc(1.18 + var(--rk-blast, 0) * 0.6)); opacity: 1; }
+  }
+  #trendBoom .boom-flash,
+  #trendBoom .boom-ring,
+  #trendBoom .boom-spark { opacity: 0; }
+  #trendBoom.boom-on .boom-flash { animation: boomFlash 0.8s ease-out forwards; }
+  #trendBoom.boom-on .boom-ring { animation: boomRing 0.8s ease-out forwards; }
+  #trendBoom.boom-on .boom-ring-2 { animation-delay: 0.08s; }
+  #trendBoom.boom-on .boom-spark { animation: boomSpark 0.8s ease-out forwards; }
+  .boom-flash {
+    position: absolute;
+    width: 34px; height: 34px;
+    left: -17px; top: -17px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #ffffff 0%, #FFE066 45%, #FF7E3D 75%, rgba(255, 126, 61, 0) 100%);
+    box-shadow: 0 0 18px 6px rgba(255, 160, 60, 0.8);
+  }
+  .boom-ring {
+    position: absolute;
+    width: 24px; height: 24px;
+    left: -12px; top: -12px;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 180, 80, 0.95);
+  }
+  .boom-spark {
+    position: absolute;
+    width: 9px; height: 9px;
+    left: -4.5px; top: -4.5px;
+    border-radius: 50%;
+    background: #FFC53D;
+    box-shadow: 0 0 6px rgba(255, 180, 80, 0.95);
+  }
+  @keyframes boomFlash {
+    0% { transform: scale(0.2); opacity: 1; }
+    35% { transform: scale(1.6); opacity: 1; }
+    100% { transform: scale(2.4); opacity: 0; }
+  }
+  @keyframes boomRing {
+    0% { transform: scale(0.2); opacity: 1; }
+    100% { transform: scale(6); opacity: 0; }
+  }
+  @keyframes boomSpark {
+    0% { transform: rotate(var(--a)) translateX(0); opacity: 1; }
+    70% { transform: rotate(var(--a)) translateX(34px); opacity: 1; }
+    100% { transform: rotate(var(--a)) translateX(70px); opacity: 0; }
+  }
+  #trendRocket.rk-blasted { opacity: 0; }
+  @media (max-width: 767px) {
+    #trendRocketSvg { transform: scale(0.55); transform-origin: bottom center; }
+    .live-chart-wrap { height: 140px; }
+    .live-ticker { gap: 6px 10px; }
+    .live-cell { min-width: 0; flex: 1 1 30%; }
+    .live-cell-val { font-size: 13px; }
+  }
+  #revenueMonthDonut {
+    animation: donutSpin 3.5s linear infinite;
+  }
+  @keyframes donutSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+</style>
+
+<div class="row g-3 mt-2">
+  <!-- Live Intraday Replay (between trend and intraday) -->
+  <div class="col-12">
+    <div class="card-custom">
+      <div class="card-header d-flex justify-content-between align-items-center" style="flex-wrap:wrap;gap:8px;">
+        <span><i class="fa fa-line-chart" style="margin-right:8px;"></i>Live Intraday &mdash; {{ today_label }}</span>
+        <span class="d-flex align-items-center" style="gap:8px;">
+          <span class="live-badge" id="liveBadge"><span class="live-dot"></span> LIVE</span>
+          <button type="button" id="liveToggleBtn" class="live-ctrl-btn" title="Pause / resume the live line">
+            <i class="fa fa-pause" id="liveToggleIcon"></i>
+          </button>
+          <button type="button" id="liveResetBtn" class="live-ctrl-btn" title="Restart from 00:00">
+            <i class="fa fa-refresh"></i>
+          </button>
+        </span>
+      </div>
+      <div class="card-body">
+        <div class="live-legend">
+          <span class="live-legend-dot"></span>
+          Price Movement (Rs.) &mdash; cyan line
+        </div>
+        <div class="live-ticker">
+          <div class="live-cell">
+            <span class="live-cell-label">Time</span>
+            <span class="live-cell-val" id="liveTime">00:00</span>
+          </div>
+          <div class="live-cell">
+            <span class="live-cell-label">Revenue</span>
+            <span class="live-cell-val cyan" id="liveRev">Rs. 0</span>
+          </div>
+          <div class="live-cell">
+            <span class="live-cell-label">Day High</span>
+            <span class="live-cell-val cyan" id="liveHigh">Rs. 0</span>
+          </div>
+          <div class="live-cell">
+            <span class="live-cell-label">Day Low</span>
+            <span class="live-cell-val cyan" id="liveLow">Rs. 0</span>
+          </div>
+          <div class="live-cell">
+            <span class="live-cell-label">Orders</span>
+            <span class="live-cell-val" id="liveOrders">0</span>
+          </div>
+          <div class="live-cell">
+            <span class="live-cell-label">Change</span>
+            <span class="live-cell-val" id="liveChange">0.0%</span>
+          </div>
+        </div>
+        <div class="live-chart-wrap">
+          <canvas id="liveIntradayChart" height="78"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mt-1">
+  <!-- Intraday Revenue -->
+  <div class="col-12">
+    <div class="card-custom">
+      <div class="card-header">Intraday Revenue &mdash; {{ today_label }}</div>
+      <div class="card-body">
+        <div class="live-chart-wrap">
+          <canvas id="intradayChart" height="70"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+  var monthLabels = {{ revenue_month_labels|safe }};
+  var monthValues = {{ revenue_month_values|safe }};
+  var hourLabels = {{ hour_labels|safe }};
+  var hourRevenue = {{ hour_revenue_values|safe }};
+  var hourCounts = {{ hour_count_values|safe }};
+  var monthPalette = ['#F5C76F', '#FF7EB3', '#3DE0C8', '#C77BFF', '#F9A03F', '#E85D75'];
+
+  if (window.Chart) {
+    var trendMax = Math.max.apply(null, monthValues.concat([1]));
+    var trend = new Chart(document.getElementById('revenueTrendChart'), {
+      type: 'line',
+      data: {
+        labels: monthLabels,
+        datasets: [{
+          label: 'Revenue (Rs.)',
+          data: monthValues,
+          borderColor: '#2ECC71',
+          borderWidth: 3,
+          borderCapStyle: 'round',
+          backgroundColor: function (ctx) {
+            var area = ctx.chart.chartArea;
+            if (!area) return 'rgba(46, 204, 113, 0.25)';
+            var g = ctx.chart.ctx.createLinearGradient(0, area.bottom, 0, area.top);
+            g.addColorStop(0, 'rgba(46, 204, 113, 0.03)');
+            g.addColorStop(1, 'rgba(46, 204, 113, 0.45)');
+            return g;
+          },
+          fill: true,
+          tension: 0.45,
+          pointRadius: 4,
+          pointHoverRadius: 7,
+          pointBackgroundColor: '#2ECC71',
+          pointBorderColor: '#17112f',
+          pointBorderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        animation: { duration: 1400, easing: 'easeOutQuart' },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function (ctx) { return ' Rs. ' + ctx.parsed.y.toLocaleString('en-IN'); }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(212,175,55,0.06)' },
+            ticks: { color: '#a9a2d0' }
+          },
+          y: {
+            beginAtZero: true,
+            suggestedMax: trendMax * 1.15,
+            grid: { color: 'rgba(212,175,55,0.08)' },
+            ticks: {
+              color: '#a9a2d0',
+              callback: function (v) { return 'Rs.' + v.toLocaleString('en-IN'); }
+            }
+          }
+        }
+      }
+    });
+
+    (function trendWave() {
+      var tds = trend.data.datasets[0];
+      var base = monthValues.slice();
+      var start = null;
+      function frame(ts) {
+        if (start === null) start = ts;
+        var t = (ts - start) / 900;
+        tds.data = base.map(function (v, i) {
+          return v * (1 + 0.05 * Math.sin(t + i * 1.1));
+        });
+        trend.update('none');
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    })();
+
+    (function trendRocket() {
+      var el = document.getElementById('trendRocket');
+      var boom = document.getElementById('trendBoom');
+      if (!el || !boom) return;
+      for (var s = 0; s < 10; s++) {
+        var sp = document.createElement('div');
+        sp.className = 'boom-spark';
+        sp.style.setProperty('--a', (s * 36) + 'deg');
+        boom.appendChild(sp);
+      }
+      var t = 0;
+      var start = null;
+      var holdUntil = -1;
+      var boomed = false;
+      function frame(ts) {
+        if (start === null) start = ts;
+        var dt = Math.min(0.1, (ts - start) / 1000);
+        start = ts;
+        var data = trend.data.datasets[0].data;
+        var n = data.length;
+        if (n >= 2 && trend.scales.y) {
+          if (holdUntil >= 0 && ts >= holdUntil) {
+            t = 0;
+            holdUntil = -1;
+            boomed = false;
+            boom.classList.remove('boom-on');
+            el.classList.remove('rk-blasted');
+          }
+          t += dt * 1.4;
+          if (t >= n - 1) {
+            t = n - 1;
+            if (holdUntil < 0) {
+              holdUntil = ts + 1200;
+              if (!boomed) {
+                boomed = true;
+                boom.classList.add('boom-on');
+                el.classList.add('rk-blasted');
+              }
+            }
+          }
+          var i = Math.floor(t);
+          var f = t - i;
+          var j = Math.min(i + 1, n - 1);
+          var x0 = trend.scales.x.getPixelForValue(i);
+          var x1 = trend.scales.x.getPixelForValue(j);
+          var y0 = trend.scales.y.getPixelForValue(data[i]);
+          var y1 = trend.scales.y.getPixelForValue(data[j]);
+          var x = x0 + (x1 - x0) * f;
+          var y = y0 + (y1 - y0) * f;
+          var ang = Math.atan2(x1 - x0, -(y1 - y0)) * 180 / Math.PI;
+          el.style.transform = 'translate(' + (x - 30) + 'px,' + (y - 62) + 'px) rotate(' + ang + 'deg)';
+          boom.style.transform = 'translate(' + x + 'px,' + y + 'px)';
+          var blast = (t >= n - 1) ? 1 : Math.max(0, Math.min(1, (t - (n - 2.5)) / 1.5));
+          el.style.setProperty('--rk-blast', blast);
+        }
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    })();
+
+    var monthDonut = new Chart(document.getElementById('revenueMonthDonut'), {
+      type: 'doughnut',
+      data: {
+        labels: monthLabels,
+        datasets: [{
+          data: monthValues,
+          backgroundColor: monthPalette.slice(0, monthLabels.length),
+          borderColor: '#17112f',
+          borderWidth: 3,
+          hoverOffset: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        cutout: '68%',
+        animation: { duration: 1200, easing: 'easeOutQuart' },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function (ctx) {
+                var total = monthValues.reduce(function (a, b) { return a + b; }, 0);
+                var pct = total > 0 ? (ctx.parsed / total * 100).toFixed(1) : 0;
+                return ' ' + ctx.label + ': Rs. ' + ctx.parsed.toLocaleString('en-IN') + ' (' + pct + '%)';
+              }
+            }
+          }
+        }
+      }
+    });
+    var monthTotalEl = document.getElementById('monthDonutTotal');
+    if (monthTotalEl) {
+      var monthTotal = monthValues.reduce(function (a, b) { return a + b; }, 0);
+      monthTotalEl.textContent = 'Rs. ' + monthTotal.toLocaleString('en-IN');
+    }
+    var monthLegendEl = document.getElementById('monthDonutLegend');
+    if (monthLegendEl) {
+      monthLabels.forEach(function (m, i) {
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:3px 0;font-size:11px;color:#e9e6f7;';
+        row.innerHTML =
+          '<span style="width:10px;height:10px;border-radius:50%;background:' + monthPalette[i % monthPalette.length] + ';flex:none;"></span>' +
+          '<span style="flex:1;color:#a9a2d0;">' + m + '</span>' +
+          '<span style="font-weight:700;color:' + monthPalette[i % monthPalette.length] + ';">Rs. ' + monthValues[i].toLocaleString('en-IN') + '</span>';
+        monthLegendEl.appendChild(row);
+      });
+    }
+
+    var intraday = new Chart(document.getElementById('intradayChart'), {
+      type: 'line',
+      data: {
+        labels: hourLabels,
+        datasets: [
+          {
+            label: 'Revenue (Rs.)',
+            data: hourRevenue,
+            borderColor: '#5B8DEF',
+            backgroundColor: 'rgba(91, 141, 239, 0.15)',
+            borderWidth: 2.5,
+            tension: 0.4,
+            fill: true,
+            pointRadius: 0,
+            pointHoverRadius: 5,
+            yAxisID: 'y'
+          },
+          {
+            label: 'Orders',
+            data: hourCounts,
+            borderColor: '#6B5BD6',
+            backgroundColor: 'rgba(107, 91, 214, 0.15)',
+            borderWidth: 2,
+            borderDash: [6, 4],
+            tension: 0.4,
+            fill: false,
+            pointRadius: 0,
+            pointHoverRadius: 5,
+            yAxisID: 'y1'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            labels: { color: '#a9a2d0', usePointStyle: true, padding: 18 }
+          },
+          tooltip: {
+            callbacks: {
+              label: function (ctx) {
+                if (ctx.dataset.yAxisID === 'y') {
+                  return ' Revenue: Rs. ' + ctx.parsed.y.toLocaleString('en-IN');
+                }
+                return ' Orders: ' + ctx.parsed.y;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(212,175,55,0.06)' },
+            ticks: { color: '#a9a2d0', maxTicksLimit: 12 }
+          },
+          y: {
+            position: 'left',
+            grid: { color: 'rgba(212,175,55,0.08)' },
+            ticks: {
+              color: '#5B8DEF',
+              callback: function (v) { return 'Rs.' + v.toLocaleString('en-IN'); }
+            }
+          },
+          y1: {
+            position: 'right',
+            grid: { drawOnChartArea: false },
+            beginAtZero: true,
+            ticks: { color: '#6B5BD6' }
+          }
+        }
+      }
+    });
+
+    var live = new Chart(document.getElementById('liveIntradayChart'), {
+      type: 'line',
+      data: {
+        labels: hourLabels,
+        datasets: [{
+          label: 'Price (Rs.)',
+          data: [],
+          borderColor: '#3DE0C8',
+          borderWidth: 3,
+          borderCapStyle: 'round',
+          backgroundColor: function (ctx) {
+            var g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 180);
+            g.addColorStop(0, 'rgba(61, 224, 200, 0.35)');
+            g.addColorStop(1, 'rgba(61, 224, 200, 0.02)');
+            return g;
+          },
+          fill: true,
+          tension: 0.45,
+          pointRadius: 3,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#3DE0C8',
+          pointBorderColor: '#17112f',
+          pointBorderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 0 },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function (ctx) { return ' Price: Rs. ' + ctx.parsed.y.toLocaleString('en-IN'); }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(212,175,55,0.06)' },
+            ticks: { color: '#a9a2d0', maxTicksLimit: 12 }
+          },
+          y: {
+            beginAtZero: true,
+            suggestedMax: Math.max.apply(null, hourRevenue.concat([1])) * 1.6,
+            grid: { color: 'rgba(212,175,55,0.08)' },
+            ticks: {
+              color: '#a9a2d0',
+              callback: function (v) { return 'Rs.' + v.toLocaleString('en-IN'); }
+            }
+          }
+        }
+      }
+    });
+
+    var liveBaseMax = Math.max.apply(null, hourRevenue.concat([1]));
+    var liveValues = (function () {
+      var out = [];
+      var cap = liveBaseMax * 1.6;
+      for (var k = 0; k < hourLabels.length; k++) {
+        var wave = (Math.sin(k * 2.3) * 0.5 + 0.5);
+        var spike = (Math.random() * 1.4) - 0.2;
+        var v = Math.round(Math.max(0, Math.min(cap, (wave + spike) * cap)));
+        out.push(v);
+      }
+      return out;
+    })();
+
+    (function replay() {
+      var liveTime = document.getElementById('liveTime');
+      var liveRev = document.getElementById('liveRev');
+      var liveHigh = document.getElementById('liveHigh');
+      var liveLow = document.getElementById('liveLow');
+      var liveOrders = document.getElementById('liveOrders');
+      var liveChange = document.getElementById('liveChange');
+      var toggleBtn = document.getElementById('liveToggleBtn');
+      var toggleIcon = document.getElementById('liveToggleIcon');
+      var resetBtn = document.getElementById('liveResetBtn');
+      var liveBadge = document.getElementById('liveBadge');
+      var ds = live.data.datasets[0];
+      var i = 0;
+      var high = 0;
+      var low = null;
+      var running = true;
+      var timer = null;
+
+      function render(idx) {
+        var v = liveValues[idx];
+        var o = hourCounts[idx] || 0;
+        if (v > high) high = v;
+        if (low === null || v < low) low = v;
+        if (liveTime) liveTime.textContent = hourLabels[idx];
+        if (liveRev) liveRev.textContent = 'Rs. ' + v.toLocaleString('en-IN');
+        if (liveHigh) liveHigh.textContent = 'Rs. ' + high.toLocaleString('en-IN');
+        if (liveLow) liveLow.textContent = 'Rs. ' + (low === null ? 0 : low).toLocaleString('en-IN');
+        if (liveOrders) liveOrders.textContent = o;
+        if (liveChange) {
+          var base = idx > 0 ? liveValues[idx - 1] : 0;
+          var chg = base > 0 ? ((v - base) / base * 100) : 0;
+          liveChange.textContent = (chg >= 0 ? '+' : '') + chg.toFixed(1) + '%';
+          liveChange.style.color = chg >= 0 ? '#7bd6a5' : '#f28b97';
+        }
+      }
+
+      function tick() {
+        if (i >= hourLabels.length) { i = 0; ds.data = []; live.update(); }
+        ds.data.push(liveValues[i]);
+        live.update();
+        render(i);
+        i++;
+      }
+
+      function setRunning(on) {
+        running = on;
+        if (toggleIcon) toggleIcon.className = 'fa ' + (on ? 'fa-pause' : 'fa-play');
+        if (liveBadge) liveBadge.classList.toggle('paused', !on);
+        if (on) {
+          if (!timer) timer = setInterval(tick, 200);
+        } else {
+          if (timer) { clearInterval(timer); timer = null; }
+        }
+      }
+
+      function reset() {
+        i = 0;
+        high = 0;
+        low = null;
+        ds.data = [];
+        live.update();
+        render(0);
+        ds.data = [];
+        live.update();
+        if (!running) { running = true; }
+        setRunning(running);
+      }
+
+      if (toggleBtn) toggleBtn.addEventListener('click', function () { setRunning(!running); });
+      if (resetBtn) resetBtn.addEventListener('click', reset);
+
+      tick();
+      timer = setInterval(tick, 380);
+    })();
+  }
+})();
+</script>
+
+{% endblock %}

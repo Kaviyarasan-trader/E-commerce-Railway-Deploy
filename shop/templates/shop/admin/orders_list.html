@@ -1,0 +1,91 @@
+{% extends 'shop/admin/base.html' %}
+{% block title %}Orders{% endblock %}
+{% block page_title %}Orders{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <form method="GET" style="max-width:350px;flex:1;" onsubmit="return false;">
+    <div class="input-group position-relative">
+      <input type="text" name="q" id="adminOrderSearch" class="form-control form-control-sm-custom has-clear-x" placeholder="Search orders by ID, customer, phone, status..." value="{{ query }}" style="border-radius:6px 0 0 6px;" autocomplete="off">
+      <span id="clearX" class="search-clear-x hidden" title="Clear search"><i class="fa fa-times"></i></span>
+      <button class="btn btn-dark btn-sm" style="border-radius:0 6px 6px 0;"><i class="fa fa-search"></i></button>
+    </div>
+  </form>
+</div>
+
+<div id="resultsInfo" style="font-size:13px;color:#a9a2d0;margin-bottom:10px;">
+  Showing results for "<strong id="queryText">{{ query }}</strong>" &middot; <span id="resultCount"></span>
+</div>
+
+<div class="card-custom">
+  <div class="card-body p-0">
+    <table class="table table-custom">
+      <thead>
+        <tr>
+          <th>Order #</th>
+          <th>Customer</th>
+          <th>Amount</th>
+          <th>Status</th>
+          <th>Payment</th>
+          <th>Date</th>
+          <th></th>
+        </tr>
+      </thead>
+      {% include 'shop/admin/partials/order_rows.html' %}
+    </table>
+  </div>
+</div>
+
+<script>
+(function () {
+  const input = document.getElementById('adminOrderSearch');
+  if (!input) return;
+  const tbody = document.querySelector('.table-custom tbody');
+  const info = document.getElementById('resultsInfo');
+  const queryText = document.getElementById('queryText');
+  const countEl = document.getElementById('resultCount');
+  const clearX = document.getElementById('clearX');
+  const url = '{% url "admin_orders_rows" %}';
+  let timer = null;
+  let seq = 0;
+  function load() {
+    const q = input.value.trim();
+    const mySeq = ++seq;
+    fetch(url + '?q=' + encodeURIComponent(q), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(r => r.json())
+      .then(data => {
+        if (mySeq !== seq) return;
+        tbody.innerHTML = data.rows;
+        clearX.classList.toggle('hidden', !q);
+        if (q) {
+          queryText.textContent = q;
+          info.style.display = '';
+        } else {
+          info.style.display = 'none';
+        }
+        if (countEl) countEl.textContent = data.count + (data.count === 1 ? ' result' : ' results');
+      })
+      .catch(() => {});
+  }
+  input.addEventListener('input', function () {
+    clearX.classList.toggle('hidden', !this.value.trim());
+    clearTimeout(timer);
+    timer = setTimeout(load, 300);
+  });
+  if (clearX) {
+    clearX.addEventListener('click', function () {
+      input.value = '';
+      clearX.classList.add('hidden');
+      clearTimeout(timer);
+      load();
+      input.focus();
+    });
+  }
+  var q0 = input.value.trim();
+  queryText.textContent = q0;
+  info.style.display = q0 ? '' : 'none';
+  clearX.classList.toggle('hidden', !q0);
+})();
+</script>
+
+{% endblock %}

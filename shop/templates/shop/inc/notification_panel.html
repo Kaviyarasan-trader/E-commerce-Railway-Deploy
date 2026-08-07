@@ -1,0 +1,21 @@
+{% load tz %}
+<div class="ntf-list" id="ntfList">
+  {% for n in notifications %}
+  <div class="ntf-item {% if not n.is_read %}ntf-unread{% endif %}" data-id="{{ n.id }}" {% if n.link %}data-link="{{ n.link }}"{% endif %}>
+    <div class="ntf-icon" style="{% if n.notification_type == 'announcement' %}background:linear-gradient(135deg,#F5C76F,#D4AF37);color:#171136;{% endif %}">
+      <i class="fa {{ n.icon }}"></i>
+    </div>
+    <div class="ntf-body">
+      <div class="ntf-title">{{ n.title }}</div>
+      {% if n.message %}<div class="ntf-msg">{{ n.message }}</div>{% endif %}
+      <div class="ntf-time">{{ n.created_at|timesince }} ago</div>
+    </div>
+    <button type="button" class="ntf-del" data-id="{{ n.id }}" title="Delete notification" aria-label="Delete notification"><i class="fa fa-trash"></i></button>
+  </div>
+  {% empty %}
+  <div class="ntf-empty">
+    <i class="fa fa-bell-slash"></i>
+    <p>No notifications yet.</p>
+  </div>
+  {% endfor %}
+</div>

@@ -1,0 +1,622 @@
+{% extends 'shop/layouts/main.html' %}
+{% load static %}
+{% block title %}Search{% if query %} "{{ query }}"{% endif %} | KaviBazaar{% endblock %}
+
+{% block content %}
+<style>
+  .filter-sidebar {
+    background: #fff;
+    border: 1px solid #ece9e1;
+    border-radius: 16px;
+    padding: 20px;
+  }
+  .filter-sidebar h6 {
+    font-weight: 700;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: #333;
+    margin-bottom: 12px;
+  }
+  .filter-sidebar .filter-group {
+    border-bottom: 1px solid #f0ede6;
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+  }
+  .filter-sidebar .filter-group:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+  .filter-sidebar .category-link {
+    display: block;
+    padding: 6px 10px;
+    font-size: 13px;
+    color: #555;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: background .15s;
+  }
+  .filter-sidebar .category-link:hover { background: #f5f3ed; }
+  .filter-sidebar .category-link.active {
+    background: #2C2C2A;
+    color: #fff;
+  }
+  .sort-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+    border: 1px solid #ece9e1;
+    border-radius: 12px;
+    padding: 10px 16px;
+    margin-bottom: 16px;
+  }
+  .sort-bar select {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 13px;
+    outline: none;
+  }
+  .result-count {
+    font-size: 13px;
+    color: #888;
+  }
+  .product-card {
+    background: #fff;
+    border: 1px solid #ece9e1;
+    border-radius: 14px;
+    overflow: hidden;
+    transition: box-shadow .2s, transform .2s;
+    height: 100%;
+  }
+  .product-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
+  }
+  .product-card img {
+    width: 100%;
+    height: 220px;
+    object-fit: contain;
+    padding: 16px;
+    background: #faf9f6;
+  }
+  .product-card .card-body {
+    padding: 0 16px 16px;
+  }
+  .product-card .card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .product-card .price-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .product-card .current-price {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a1a1a;
+  }
+  .product-card .old-price {
+    font-size: 12px;
+    color: #aaa;
+    text-decoration: line-through;
+  }
+  .product-card .discount {
+    font-size: 11px;
+    color: #388e3c;
+    font-weight: 600;
+  }
+  .product-card .product-rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+    background: #F6F6F6;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #388E3C;
+    line-height: 1.4;
+    cursor: pointer;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+  }
+  .product-card .product-rating:hover { background: #EEF2FF; box-shadow: 0 2px 6px rgba(60, 52, 137, 0.12); }
+  .product-card .product-rating i { color: #F5A623; font-size: 11px; }
+  .product-card .product-rating small { font-weight: 500; color: #888; margin-left: 1px; }
+  .price-range-inputs {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .price-range-inputs input {
+    width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 13px;
+    outline: none;
+  }
+  .price-range-inputs input:focus { border-color: #2C2C2A; }
+  .price-range-inputs span { color: #aaa; font-size: 12px; }
+
+  /* Category cards (categories scope) */
+  .cat-card {
+    background: #fff;
+    border: 1px solid #ece9e1;
+    border-radius: 12px;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    transition: border-color .2s, transform .2s;
+  }
+  .cat-card:hover {
+    border-color: #c8c4bb;
+    transform: translateY(-2px);
+    text-decoration: none;
+  }
+  .cat-card-img {
+    height: 110px;
+    overflow: hidden;
+    background: #f3f1eb;
+    position: relative;
+  }
+  .cat-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top;
+    transition: transform .35s ease;
+  }
+  .cat-card:hover .cat-card-img img { transform: scale(1.04); }
+  .cat-card-body { padding: 10px 12px 12px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+  .cat-card-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1a1a1a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0;
+  }
+  .cat-card-count { font-size: 11px; color: #aaa; margin: 0; }
+  .cat-card-arrow { margin-top: auto; font-size: 14px; color: #ccc; line-height: 1; transition: color .15s, transform .15s; }
+  .cat-card:hover .cat-card-arrow { color: #1a1a1a; transform: translateX(3px); }
+
+  /* Result rows (cart / favourites scopes) */
+  .result-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: #fff;
+    border: 1px solid #ece9e1;
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    transition: box-shadow .15s, transform .15s;
+  }
+  .result-row:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); transform: translateY(-2px); }
+  .result-row-img {
+    width: 64px; height: 64px;
+    flex-shrink: 0;
+    background: #faf9f6;
+    border: 1px solid #eee;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .result-row-img img { width: 100%; height: 100%; object-fit: contain; }
+  .result-row-info { flex: 1; min-width: 0; }
+  .result-row-name {
+    font-size: 14px; font-weight: 600; color: #1a1a1a;
+    text-decoration: none;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    display: block;
+  }
+  .result-row-name:hover { color: #3C3489; }
+  .result-row-sub { font-size: 12px; color: #888; margin-top: 3px; }
+  .result-row-right { text-align: right; flex-shrink: 0; }
+  .result-row-price { font-size: 15px; font-weight: 700; color: #1a1a1a; }
+
+  /* Order cards (orders scope) */
+  .order-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 10px 30px rgba(60,52,137,.07);
+    border: 1px solid rgba(60,52,137,.05);
+    position: relative;
+    overflow: hidden;
+  }
+  .order-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #3C3489, #6B5BD6, #FAC775);
+  }
+  .order-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .order-id { font-size: 15px; font-weight: 800; color: #1a1a1a; }
+  .order-date { font-size: 12px; color: #999; background: #f4f3fb; border-radius: 20px; padding: 4px 12px; }
+  .status-badge { padding: 5px 14px; border-radius: 30px; font-size: 12px; font-weight: 700; letter-spacing: .03em; }
+  .badge-pending    { background: #FFF4D6; color: #A06B00; border: 1px solid #F5DFA8; }
+  .badge-processing { background: #E7ECFF; color: #3C3489; border: 1px solid #C9D2F5; }
+  .badge-shipped    { background: #E0F3F7; color: #0C6B80; border: 1px solid #B8E3EC; }
+  .badge-delivered  { background: #EAF6EE; color: #1E7A3C; border: 1px solid #C9E8D4; }
+  .badge-cancelled  { background: #FCEBEB; color: #B02A37; border: 1px solid #F7C1C1; }
+  .order-item-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 12px; background: #faf9fd; border-radius: 10px; margin-bottom: 6px;
+    font-size: 13px; color: #444;
+  }
+  .order-item-row span:last-child { font-weight: 600; color: #1a1a1a; }
+  .order-footer {
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 10px; margin-top: 14px; padding-top: 14px;
+    border-top: 1px dashed #e5e1f0; font-size: 13px;
+  }
+  .order-total { font-size: 16px; font-weight: 800; color: #3C3489; }
+
+  .empty-box {
+    text-align: center;
+    padding: 60px 20px;
+  }
+  .empty-box i { font-size: 48px; color: #ddd; }
+  .empty-box p { margin-top: 16px; font-size: 16px; color: #888; }
+
+  /* AI-interpreted query chips */
+  .ai-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #F4F1FF;
+    border: 1px solid #E2DBF9;
+    color: #3C3489;
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 12px;
+  }
+  .ai-chip i { color: #6B5BD6; }
+  .related-heading {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-top: 28px;
+  }
+</style>
+
+<section style="padding-top: 24px; padding-bottom: 48px;">
+  <div class="container">
+    <div class="row">
+      {% if scope == 'products' or scope == 'category_products' %}
+      <!-- Sidebar Filters -->
+      <div class="col-lg-3 mb-4">
+        <div class="filter-sidebar">
+          <h6><i class="fa fa-filter me-1"></i> Filters</h6>
+
+          <div class="filter-group">
+            <h6>Category</h6>
+            <a href="?q={{ query|urlencode }}&scope={{ scope }}&sort={{ sort_by|urlencode }}" class="category-link {% if not selected_category %}active{% endif %}">All</a>
+            {% for cat in categories %}
+            <a href="{% url 'collections' cat.name %}" class="category-link {% if selected_category == cat.name %}active{% endif %}">{{ cat.name }}</a>
+            {% endfor %}
+          </div>
+
+          <div class="filter-group">
+            <h6>Price Range</h6>
+            <form method="GET">
+              <input type="hidden" name="q" value="{{ query }}">
+              <input type="hidden" name="scope" value="{{ scope }}">
+              <input type="hidden" name="category" value="{{ selected_category }}">
+              <input type="hidden" name="sort" value="{{ sort_by }}">
+              <div class="price-range-inputs mb-2">
+                <input type="number" name="min_price" placeholder="Min" value="{{ min_price }}" min="0">
+                <span>to</span>
+                <input type="number" name="max_price" placeholder="Max" value="{{ max_price }}" min="0">
+              </div>
+              <button type="submit" class="btn btn-primary btn-sm w-100" style="font-size:12px;">Apply</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div class="col-lg-9">
+        <!-- Header -->
+        <div style="margin-bottom:8px;">
+          <h4 style="font-weight:700;font-size:20px;">
+            {% if query %}Results for "{{ query }}"{% else %}All Products{% endif %}
+          </h4>
+        </div>
+
+        {% if chips %}
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 14px;">
+          <span class="ai-chip" style="background:transparent;border:1px dashed #c9c4d8;color:#888;"><i class="fa fa-magic me-1"></i>AI understood</span>
+          {% for chip in chips %}
+          <span class="ai-chip">
+            <i class="fa {{ chip.icon }} me-1"></i>{{ chip.label }}: <strong>{{ chip.value }}</strong>
+          </span>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Sort + Count -->
+        <div class="sort-bar">
+          <span class="result-count">{{ products_count }} product(s) found</span>
+          <select onchange="window.location.href=this.value">
+            <option value="?q={{ query|urlencode }}&scope={{ scope }}&category={{ selected_category|urlencode }}&min_price={{ min_price }}&max_price={{ max_price }}&sort=">Sort: Relevance</option>
+            <option value="?q={{ query|urlencode }}&scope={{ scope }}&category={{ selected_category|urlencode }}&min_price={{ min_price }}&max_price={{ max_price }}&sort=price_low" {% if sort_by == 'price_low' %}selected{% endif %}>Price: Low to High</option>
+            <option value="?q={{ query|urlencode }}&scope={{ scope }}&category={{ selected_category|urlencode }}&min_price={{ min_price }}&max_price={{ max_price }}&sort=price_high" {% if sort_by == 'price_high' %}selected{% endif %}>Price: High to Low</option>
+            <option value="?q={{ query|urlencode }}&scope={{ scope }}&category={{ selected_category|urlencode }}&min_price={{ min_price }}&max_price={{ max_price }}&sort=newest" {% if sort_by == 'newest' %}selected{% endif %}>Newest First</option>
+            <option value="?q={{ query|urlencode }}&scope={{ scope }}&category={{ selected_category|urlencode }}&min_price={{ min_price }}&max_price={{ max_price }}&sort=name" {% if sort_by == 'name' %}selected{% endif %}>Name A-Z</option>
+          </select>
+        </div>
+
+        <!-- Products Grid -->
+        <div class="row g-3">
+          {% for item in products %}
+          <div class="col-4 col-md-4 col-lg-3">
+            <a href="{% url 'product_details' item.category.name item.name %}" style="text-decoration:none;">
+              <div class="product-card">
+                {% if item.product_image %}
+                  <img src="{{ item.product_image.url }}" alt="{{ item.name }}" loading="lazy">
+                {% endif %}
+                <div class="card-body">
+                  <div class="card-title">{{ item.name }}</div>
+                  <div style="font-size:11px;color:#999;margin-top:2px;">{{ item.vendor }}</div>
+                  {% if item.avg_rating %}
+                  <div class="product-rating" onclick="event.preventDefault();event.stopPropagation();window.location.href='{% url 'product_details' item.category.name item.name %}#reviews';">
+                    <i class="fa fa-star"></i>{{ item.avg_rating|floatformat:1 }}
+                    <small>({{ item.rating_count }})</small>
+                  </div>
+                  {% endif %}
+                  <div class="price-row">
+                    <span class="current-price">Rs.{{ item.selling_price|stringformat:'d' }}</span>
+                    {% if item.original_price > item.selling_price %}
+                    <span class="old-price">Rs.{{ item.original_price|stringformat:'d' }}</span>
+                    <span class="discount">{{ item.discount_percent }}% off</span>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </a>
+          </div>
+          {% empty %}
+          <div class="col-12">
+            <div style="text-align:center;padding:60px 20px;">
+              <i class="fa fa-search" style="font-size:48px;color:#ddd;"></i>
+              <p style="margin-top:16px;font-size:16px;color:#888;">
+                {% if related %}No exact match for "<strong>{{ query }}</strong>" — here are some related products you may like:{% elif query %}No products found for "<strong>{{ query }}</strong>"{% else %}Enter a search term to find products{% endif %}
+              </p>
+              <a href="/" class="btn btn-primary btn-sm">Browse Products</a>
+            </div>
+            {% if related %}
+            <div class="related-heading"><i class="fa fa-lightbulb me-1" style="color:#6B5BD6;"></i> Related products</div>
+            <div class="row g-3 mt-1">
+              {% for item in related %}
+              <div class="col-6 col-md-4 col-lg-3">
+                <a href="{% url 'product_details' item.category.name item.name %}" style="text-decoration:none;">
+                  <div class="product-card">
+                    {% if item.product_image %}
+                      <img src="{{ item.product_image.url }}" alt="{{ item.name }}" loading="lazy">
+                    {% endif %}
+                    <div class="card-body">
+                      <div class="card-title">{{ item.name }}</div>
+                      <div style="font-size:11px;color:#999;margin-top:2px;">{{ item.vendor }}</div>
+                      {% if item.avg_rating %}
+                      <div class="product-rating" onclick="event.preventDefault();event.stopPropagation();window.location.href='{% url 'product_details' item.category.name item.name %}#reviews';">
+                        <i class="fa fa-star"></i>{{ item.avg_rating|floatformat:1 }}
+                        <small>({{ item.rating_count }})</small>
+                      </div>
+                      {% endif %}
+                      <div class="price-row">
+                        <span class="current-price">Rs.{{ item.selling_price|stringformat:'d' }}</span>
+                        {% if item.original_price > item.selling_price %}
+                        <span class="old-price">Rs.{{ item.original_price|stringformat:'d' }}</span>
+                        <span class="discount">{{ item.discount_percent }}% off</span>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                </a>
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      {% elif scope == 'categories' %}
+      <!-- Categories scope -->
+      <div class="col-12">
+        <div style="margin-bottom:8px;">
+          <h4 style="font-weight:700;font-size:20px;">
+            {% if query %}Categories for "{{ query }}"{% else %}Categories{% endif %}
+          </h4>
+        </div>
+        <div class="sort-bar">
+          <span class="result-count">{{ products.count }} categor{{ products.count|pluralize:'y,ies' }} found</span>
+        </div>
+        <div class="row g-3">
+          {% for item in products %}
+          <div class="col-6 col-md-3 col-lg-2 mb-3">
+            <a href="{% url 'collections' item.name %}" class="cat-card">
+              <div class="cat-card-img">
+                {% if item.image %}
+                  <img src="{{ item.image.url }}" alt="{{ item.name }}">
+                {% else %}
+                  <img src="{% static 'images/no-image.jpg' %}" alt="No Image" style="object-position:center;">
+                {% endif %}
+              </div>
+              <div class="cat-card-body">
+                <p class="cat-card-name">{{ item.name }}</p>
+                <p class="cat-card-count">{{ item.product_set.count }} product{{ item.product_set.count|pluralize }}</p>
+                <div class="cat-card-arrow">→</div>
+              </div>
+            </a>
+          </div>
+          {% empty %}
+          <div class="col-12">
+            <div class="empty-box">
+              <i class="fa fa-th-large"></i>
+              <p>{% if query %}No categories found for "<strong>{{ query }}</strong>"{% else %}No categories available{% endif %}</p>
+              <a href="{% url 'collections' %}" class="btn btn-primary btn-sm">All Categories</a>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      {% elif scope == 'cart' %}
+      <!-- Cart scope -->
+      <div class="col-12">
+        <div style="margin-bottom:8px;">
+          <h4 style="font-weight:700;font-size:20px;">
+            {% if query %}Cart items for "{{ query }}"{% else %}Your Cart{% endif %}
+          </h4>
+        </div>
+        <div class="sort-bar">
+          <span class="result-count">{{ products.count }} cart item{{ products.count|pluralize }} found</span>
+        </div>
+        {% for item in products %}
+        <div class="result-row">
+          <a href="{% url 'product_details' item.product.category.name item.product.name %}" class="result-row-img">
+            {% if item.product.product_image %}
+              <img src="{{ item.product.product_image.url }}" alt="{{ item.product.name }}">
+            {% else %}
+              <img src="{% static 'images/no-image.jpg' %}" alt="No Image">
+            {% endif %}
+          </a>
+          <div class="result-row-info">
+            <a href="{% url 'product_details' item.product.category.name item.product.name %}" class="result-row-name">
+              {{ item.product.name }}
+            </a>
+            <div class="result-row-sub">Qty: {{ item.product_qty }}</div>
+          </div>
+          <div class="result-row-right">
+            <div class="result-row-price">Rs. {{ item.total_cost|stringformat:'d' }}</div>
+            <a href="{% url 'cart' %}" style="font-size:12px;color:#3C3489;">Go to cart <i class="fa fa-arrow-right"></i></a>
+          </div>
+        </div>
+        {% empty %}
+        <div class="empty-box">
+          <i class="fa fa-shopping-cart"></i>
+          <p>{% if query %}No cart items match "<strong>{{ query }}</strong>"{% else %}Your cart is empty{% endif %}</p>
+          <a href="{% url 'home' %}" class="btn btn-primary btn-sm">Browse Products</a>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% elif scope == 'favourites' %}
+      <!-- Favourites scope -->
+      <div class="col-12">
+        <div style="margin-bottom:8px;">
+          <h4 style="font-weight:700;font-size:20px;">
+            {% if query %}Favourites for "{{ query }}"{% else %}Your Favourites{% endif %}
+          </h4>
+        </div>
+        <div class="sort-bar">
+          <span class="result-count">{{ products.count }} favourite{{ products.count|pluralize }} found</span>
+        </div>
+        <div class="row g-3">
+          {% for item in products %}
+          <div class="col-6 col-md-4 col-lg-3">
+            <a href="{% url 'product_details' item.product.category.name item.product.name %}" style="text-decoration:none;">
+              <div class="product-card">
+                {% if item.product.product_image %}
+                  <img src="{{ item.product.product_image.url }}" alt="{{ item.product.name }}" loading="lazy">
+                {% endif %}
+                <div class="card-body">
+                  <div class="card-title">{{ item.product.name }}</div>
+                  <div style="font-size:11px;color:#999;margin-top:2px;">{{ item.product.vendor }}</div>
+                  {% if item.avg_rating %}
+                  <div class="product-rating" onclick="event.preventDefault();event.stopPropagation();window.location.href='{% url 'product_details' item.product.category.name item.product.name %}#reviews';">
+                    <i class="fa fa-star"></i>{{ item.avg_rating|floatformat:1 }}
+                    <small>({{ item.rating_count }})</small>
+                  </div>
+                  {% endif %}
+                  <div class="price-row">
+                    <span class="current-price">Rs.{{ item.product.selling_price|stringformat:'d' }}</span>
+                  </div>
+                </div>
+              </div>
+            </a>
+          </div>
+          {% empty %}
+          <div class="col-12">
+            <div class="empty-box">
+              <i class="fa fa-heart"></i>
+              <p>{% if query %}No favourites match "<strong>{{ query }}</strong>"{% else %}No favourites yet{% endif %}</p>
+              <a href="{% url 'collections' %}" class="btn btn-primary btn-sm">Browse Categories</a>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      {% elif scope == 'orders' %}
+      <!-- Orders scope -->
+      <div class="col-12">
+        <div style="margin-bottom:8px;">
+          <h4 style="font-weight:700;font-size:20px;">
+            {% if query %}Orders for "{{ query }}"{% else %}Your Orders{% endif %}
+          </h4>
+        </div>
+        <div class="sort-bar">
+          <span class="result-count">{{ products.count }} order{{ products.count|pluralize }} found</span>
+        </div>
+        {% for order in products %}
+        <div class="order-card">
+          <div class="order-header">
+            <div>
+              <span class="order-id">Your Order</span>
+              <span class="order-date ms-3">{{ order.created_at|date:"d M Y, h:i A" }}</span>
+            </div>
+            <span class="status-badge badge-{{ order.status|lower }}">{{ order.status }}</span>
+          </div>
+          {% for item in order.items.all %}
+          <div class="order-item-row">
+            <span>{{ item.product.name }} x {{ item.quantity }}</span>
+            <span>Rs. {{ item.total_cost|stringformat:'d' }}</span>
+          </div>
+          {% endfor %}
+          <div class="order-footer">
+            <div style="font-size:12px;color:#888;">{{ order.items.count }} item{{ order.items.count|pluralize }}</div>
+            <div class="order-total">Total: Rs. {{ order.total_amount|stringformat:'d' }}</div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="empty-box">
+          <i class="fa fa-shopping-bag"></i>
+          <p>{% if query %}No orders match "<strong>{{ query }}</strong>"{% else %}You have no orders yet{% endif %}</p>
+          <a href="{% url 'home' %}" class="btn btn-primary btn-sm">Start Shopping</a>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+<script>
+document.querySelectorAll('input[name="min_price"], input[name="max_price"]').forEach(input => {
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowUp') { e.preventDefault(); this.value = (parseFloat(this.value) || 0) + 100; }
+    if (e.key === 'ArrowDown') { e.preventDefault(); this.value = Math.max(0, (parseFloat(this.value) || 0) - 100); }
+  });
+});
+</script>
+{% endblock %}

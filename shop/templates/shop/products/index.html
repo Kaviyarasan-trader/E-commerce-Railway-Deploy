@@ -1,0 +1,57 @@
+{% extends 'shop/layouts/main.html' %}
+{% load static %}
+{% block title %}
+KaviBazaar | Online Shopping
+{% endblock title %}
+{% block content %}
+<section class="bg-light py-4 my-5" style="min-height:600px;">
+  <div class="container">
+    <div class="row">
+      <div class="col-12">
+        <h4 class="mb-3">{{category_name}} Products</h4>
+        <hr style="border-color:#b8bfc2;">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+            <li class="breadcrumb-item active">{{category_name}} Collections</li>
+          </ol>
+        </nav>
+        {% include 'shop/inc/message.html' %}
+      </div>
+
+      {% for item in products %}
+      <div class="col-4 col-md-4 col-lg-3">
+        <div class="fk-card my-3">
+          <a href="{% url 'product_details' category_name item.name %}" style="text-decoration:none; color:inherit;">
+            <div class="fk-img">
+              {% if item.product_image %}
+                <img src="{{ item.product_image.url }}" alt="{{ item.name }}">
+              {% else %}
+                <img src="{% static 'images/no-image.jpg' %}" alt="No Image">
+              {% endif %}
+            </div>
+            <div class="fk-body">
+              <h5 class="fk-title">{{ item.name }}</h5>
+              {% if item.avg_rating %}
+              <div class="fk-rating" onclick="event.preventDefault();event.stopPropagation();window.location.href='{% url 'product_details' category_name item.name %}#reviews';">
+                <i class="fa fa-star"></i>{{ item.avg_rating|floatformat:1 }}
+                <small>({{ item.rating_count }})</small>
+              </div>
+              {% endif %}
+              <div class="fk-price">Rs.{{ item.selling_price|stringformat:'d' }}</div>
+              <div class="fk-meta">
+                {% if item.original_price > item.selling_price %}
+                <span class="fk-mrp">Rs.{{ item.original_price|stringformat:'d' }}</span>
+                <span class="fk-discount">{{ item.discount_percent }}% off</span>
+                {% endif %}
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+
+    </div>
+  </div>
+</section>
+{% endblock content %}

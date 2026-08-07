@@ -1,0 +1,11 @@
+{
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate"
+  },
+  "deploy": {
+    "startCommand": "gunicorn kavi_bazaar.wsgi --bind 0.0.0.0:$PORT --log-file -",
+    "healthcheckPath": "/",
+    "restartPolicyType": "always"
+  }
+}

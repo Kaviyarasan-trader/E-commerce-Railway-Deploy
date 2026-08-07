@@ -1,0 +1,52 @@
+# Django
+*.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment variables
+.env
+.env.local
+
+# Static files (if using whitenoise)
+staticfiles/
+# Root-anchored: only the collectstatic output dir at the project root is
+# ignored. Source static files in shop/static/ MUST be committed.
+/static/
+
+# Uploaded media
+media/
+
+# Railway (nixpacks.toml optional; railway.json is committed intentionally)
+nixpacks.toml

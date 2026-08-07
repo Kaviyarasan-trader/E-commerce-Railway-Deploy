@@ -1,0 +1,819 @@
+{% extends 'shop/layouts/main.html' %}
+{% load static %}
+{% block title %}My Orders | KaviBazaar{% endblock %}
+
+{% block content %}
+<style>
+  .orders-section {
+    background: linear-gradient(180deg, #f6f4ff 0%, #faf9f6 100%);
+    min-height: 600px;
+    padding: 48px 0 64px;
+  }
+  .section-eyebrow {
+    font-size: 11px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: #8b84c8;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .section-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #1a1a1a;
+    letter-spacing: -0.02em;
+    margin-bottom: 12px;
+  }
+  .section-underline {
+    width: 56px; height: 4px;
+    background: linear-gradient(90deg, #3C3489, #FAC775);
+    border-radius: 4px;
+    margin-bottom: 24px;
+  }
+
+  .order-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 30px rgba(60,52,137,.07);
+    border: 1px solid rgba(60,52,137,.05);
+    position: relative;
+    overflow: hidden;
+  }
+  .order-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #3C3489, #6B5BD6, #FAC775);
+  }
+  .order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .order-id {
+    font-size: 15px;
+    font-weight: 800;
+    color: #1a1a1a;
+  }
+  .order-date {
+    font-size: 12px;
+    color: #999;
+    background: #f4f3fb;
+    border-radius: 20px;
+    padding: 4px 12px;
+  }
+  .order-delivery {
+    display: inline-block;
+    margin-left: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #1E7A3C;
+    background: #EAF6EE;
+    border: 1px solid #C9E8D4;
+    border-radius: 20px;
+    padding: 4px 12px;
+  }
+
+  .status-badge {
+    padding: 5px 14px;
+    border-radius: 30px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .03em;
+  }
+  .badge-pending    { background: #FFF4D6; color: #A06B00; border: 1px solid #F5DFA8; }
+  .badge-processing { background: #E7ECFF; color: #3C3489; border: 1px solid #C9D2F5; }
+  .badge-shipped    { background: #E0F3F7; color: #0C6B80; border: 1px solid #B8E3EC; }
+  .badge-delivered  { background: #EAF6EE; color: #1E7A3C; border: 1px solid #C9E8D4; }
+  .badge-cancelled  { background: #FCEBEB; color: #B02A37; border: 1px solid #F7C1C1; }
+
+  .alt-phone-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 14px;
+    border-radius: 30px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .03em;
+    text-decoration: none;
+    background: #E7ECFF;
+    color: #3C3489;
+    border: 1px solid #C9D2F5;
+    transition: background .12s, color .12s;
+    cursor: pointer;
+  }
+  .alt-phone-badge:hover { background: #3C3489; color: #fff; }
+
+  .order-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: #faf9fd;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: #444;
+  }
+  .order-item-row span:last-child { font-weight: 600; color: #1a1a1a; }
+  .order-item-prod {
+    display: flex; align-items: center; gap: 12px;
+    flex: 1; min-width: 0;
+    text-decoration: none; color: inherit;
+  }
+  .order-item-prod:hover .order-item-name { color: #3C3489; }
+  .order-item-img {
+    width: 48px; height: 48px; border-radius: 10px; object-fit: cover;
+    border: 1px solid #e9e6f8; background: #fff; flex-shrink: 0;
+  }
+  .order-item-name {
+    flex: 1; min-width: 0; font-weight: 600; color: #1a1a1a;
+    font-size: 13px; line-height: 1.35; transition: color .15s;
+    overflow: hidden; text-overflow: ellipsis; display: -webkit-box;
+    -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  }
+  .order-item-name small { display: block; color: #888; font-weight: 500; }
+
+  .order-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px dashed #e5e1f0;
+    font-size: 13px;
+  }
+  .order-address {
+    font-size: 12px;
+    color: #888;
+    line-height: 1.7;
+  }
+  .order-address a { color: #3C3489; font-weight: 600; text-decoration: none; }
+  .order-address a:hover { text-decoration: underline; }
+  .order-total {
+    font-size: 16px;
+    font-weight: 800;
+    color: #3C3489;
+  }
+  .btn-cancel {
+    height: 34px;
+    background: transparent;
+    border: 1px solid #F7C1C1;
+    border-radius: 30px;
+    color: #B02A37;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 0 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .btn-cancel:hover {
+    background: #FCEBEB;
+    border-color: #F09595;
+    color: #791F1F;
+    text-decoration: none;
+  }
+
+  .btn-invoice {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 16px; border-radius: 30px;
+    font-size: 12px; font-weight: 700; letter-spacing: .03em;
+    border: 1px solid #C9C2F0; background: #F4F2FD; color: #3C3489;
+    text-decoration: none; cursor: pointer; transition: all .15s;
+  }
+  .btn-invoice:hover {
+    background: linear-gradient(135deg, #3C3489, #6B5BD6);
+    color: #fff; border-color: transparent; text-decoration: none;
+    box-shadow: 0 6px 14px rgba(60,52,137,.28);
+  }
+
+  .empty-box {
+    text-align: center;
+    padding: 56px 24px;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(60,52,137,.07);
+  }
+  .empty-box i { font-size: 48px; opacity: .18; color: #3C3489; }
+  .empty-box p { margin-top: 14px; color: #888; font-size: 14px; }
+  .btn-shop {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: linear-gradient(135deg, #3C3489, #6B5BD6);
+    color: #fff; border: none; border-radius: 30px;
+    font-size: 13px; font-weight: 700; letter-spacing: .04em;
+    padding: 12px 26px; text-decoration: none;
+    box-shadow: 0 8px 20px rgba(60,52,137,.32);
+    transition: transform .12s, box-shadow .12s;
+  }
+  .btn-shop:hover { color: #fff; transform: translateY(-2px); text-decoration: none; }
+
+  .order-cancel-reason {
+    font-size: 12px; color: #B02A37; font-weight: 600;
+    background: #FCEBEB; border: 1px solid #F7C1C1;
+    border-radius: 30px; padding: 6px 14px;
+    display: inline-flex; align-items: center; gap: 7px;
+    max-width: 100%;
+  }
+
+  /* Cancel reason modal */
+  .cancel-modal-overlay {
+    position: fixed; inset: 0; z-index: 1100;
+    background: rgba(10, 6, 30, 0.55);
+    backdrop-filter: blur(3px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    opacity: 0; visibility: hidden; transition: opacity .2s, visibility .2s;
+  }
+  .cancel-modal-overlay.show { opacity: 1; visibility: visible; }
+  .cancel-modal-card {
+    background: #fff; border-radius: 20px; width: 100%; max-width: 440px;
+    padding: 26px 24px 22px; box-shadow: 0 24px 60px rgba(10, 6, 30, 0.35);
+    transform: translateY(14px); transition: transform .22s ease;
+  }
+  .cancel-modal-overlay.show .cancel-modal-card { transform: translateY(0); }
+  .cancel-modal-title {
+    font-size: 18px; font-weight: 800; color: #1a1a1a;
+    display: flex; align-items: center; gap: 10px; margin-bottom: 6px;
+  }
+  .cancel-modal-title i { color: #d90429; }
+  .cancel-modal-sub {
+    font-size: 13px; color: #777; margin: 0 0 18px; line-height: 1.55;
+    font-variant: normal; letter-spacing: 0;
+  }
+  .cancel-reasons { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+  .cancel-reason {
+    display: flex; align-items: center; gap: 12px;
+    border: 1.5px solid #e6e2f8; border-radius: 12px;
+    padding: 11px 14px; cursor: pointer; transition: all .15s;
+  }
+  .cancel-reason:hover { border-color: #6B5BD6; background: #faf9ff; }
+  .cancel-reason.selected { border-color: #3C3489; background: #f4f2fd; }
+  .cancel-reason input { accent-color: #3C3489; width: 16px; height: 16px; flex: none; }
+  .cancel-reason span { font-size: 13px; font-weight: 600; color: #333; }
+  .cancel-reason-other { margin-bottom: 4px; font-variant: normal; letter-spacing: 0; }
+  .cancel-modal-actions { display: flex; gap: 10px; margin-top: 18px; }
+  .cancel-modal-actions button {
+    flex: 1; border-radius: 12px; padding: 12px 14px; font-size: 13px;
+    font-weight: 700; cursor: pointer; border: none;
+    font-variant: normal; letter-spacing: 0;
+    transition: transform .12s, box-shadow .12s, background .12s;
+  }
+  .cancel-back-btn { background: #f1eef8; color: #3C3489; }
+  .cancel-back-btn:hover { background: #e7e2f4; }
+  .cancel-confirm-btn {
+    background: linear-gradient(135deg, #ff5f6d, #d90429); color: #fff;
+    box-shadow: 0 8px 18px rgba(217, 4, 41, 0.30);
+  }
+  .cancel-confirm-btn:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(217, 4, 41, 0.42); }
+  .cancel-confirm-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+  /* Rate product (delivered orders) */
+  .rate-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 14px; border-radius: 30px;
+    font-size: 12px; font-weight: 700; letter-spacing: .03em;
+    border: 1px solid #F5DFA8; background: #FFF9EC; color: #B07D00;
+    cursor: pointer; transition: all .15s;
+  }
+  .rate-btn:hover {
+    background: linear-gradient(135deg, #F5C76F, #D4AF37);
+    color: #fff; border-color: transparent;
+  }
+  .rate-btn.rated {
+    background: #EAF6EE; color: #1E7A3C; border-color: #C9E8D4;
+  }
+  .rate-btn[disabled] { cursor: not-allowed; opacity: .9; }
+  .rate-expired {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 14px; border-radius: 30px;
+    font-size: 12px; font-weight: 700; letter-spacing: .03em;
+    border: 1px solid #ece4e4; background: #f7f2f2; color: #a98d8d;
+    white-space: nowrap;
+  }
+  .rate-modal-overlay {
+    position: fixed; inset: 0; z-index: 1100;
+    background: rgba(10, 6, 30, 0.55);
+    backdrop-filter: blur(3px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    opacity: 0; visibility: hidden; transition: opacity .2s, visibility .2s;
+  }
+  .rate-modal-overlay.show { opacity: 1; visibility: visible; }
+  .rate-modal-card {
+    background: #fff; border-radius: 20px; width: 100%; max-width: 420px;
+    padding: 26px 24px 22px; box-shadow: 0 24px 60px rgba(10, 6, 30, 0.35);
+    transform: translateY(14px); transition: transform .22s ease;
+  }
+  .rate-modal-overlay.show .rate-modal-card { transform: translateY(0); }
+  .rate-stars {
+    display: flex; gap: 8px; justify-content: center; margin: 18px 0 14px;
+  }
+  .rate-stars i {
+    font-size: 32px; color: #ddd; cursor: pointer;
+    transition: transform .12s, color .12s, text-shadow .12s;
+  }
+  .rate-stars i:hover { transform: scale(1.15); color: #F5C76F; }
+  .rate-stars i.active {
+    color: #F5C76F; transform: scale(1.12);
+    text-shadow: 0 2px 8px rgba(212, 175, 55, 0.45);
+  }
+  .rate-media-preview {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;
+  }
+  .rate-prev-item {
+    position: relative; width: 64px; height: 64px; border-radius: 10px;
+    overflow: hidden; border: 1px solid #eee; background: #f2f2f2; flex: 0 0 auto;
+  }
+  .rate-prev-item img, .rate-prev-item video {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+  }
+  .rate-prev-video-badge {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(10, 6, 30, 0.35); color: #fff; font-size: 18px; pointer-events: none;
+  }
+  .rate-prev-remove {
+    position: absolute; top: 3px; right: 3px; width: 20px; height: 20px;
+    border-radius: 50%; border: none; background: rgba(0, 0, 0, 0.65); color: #fff;
+    font-size: 12px; line-height: 1; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; padding: 0;
+  }
+  .rate-prev-remove:hover { background: #C0392B; }
+</style>
+
+<section class="orders-section">
+  <div class="container">
+    <div class="row">
+      <div class="col-12">
+        <div class="section-eyebrow">KaviBazaar</div>
+        <h1 class="section-title">My Orders</h1>
+        <div class="section-underline"></div>
+        {% include 'shop/inc/message.html' %}
+      </div>
+
+      <div class="col-12">
+        {% for order in orders %}
+        <div class="order-card" id="order-{{ order.id }}">
+
+          <div class="order-header">
+            <div>
+              <span class="order-date">{{ order.created_at|date:"d M Y, h:i A" }}</span>
+              {% if order.expected_delivery_date and order.status != 'Delivered' and order.status != 'Cancelled' %}
+              <span class="order-delivery"><i class="fa fa-truck"></i> Expected delivery by {{ order.expected_delivery_date|date:"d M Y" }}</span>
+              {% endif %}
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <span class="status-badge badge-{{ order.status|lower }}">
+                {{ order.status }}
+              </span>
+              <a href="#" onclick="toggleOrderAlt({{ order.id }});return false;"
+                 class="alt-phone-badge"
+                 title="{% if order.alternate_phone %}Update alternate phone number{% else %}Add an alternate phone number{% endif %}">
+                {% if order.alternate_phone %}
+                <i class="fa fa-pencil"></i> Edit no.
+                {% else %}
+                <i class="fa fa-plus"></i> Add no.
+                {% endif %}
+              </a>
+            </div>
+          </div>
+
+          {% for item in order.items.all %}
+          <div class="order-item-row">
+            <a href="{% url 'product_details' item.product.category.name item.product.name %}" class="order-item-prod">
+              {% if item.product.product_image %}
+              <img src="{{ item.product.product_image.url }}" alt="{{ item.product.name }}" class="order-item-img">
+              {% else %}
+              <img src="{% static 'images/no-image.jpg' %}" alt="{{ item.product.name }}" class="order-item-img">
+              {% endif %}
+              <span class="order-item-name">{{ item.product.name }} <small>x {{ item.quantity }}</small></span>
+            </a>
+            <span style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+              <span>Rs. {{ item.total_cost|stringformat:'d' }}</span>
+              {% if order.status == 'Delivered' %}
+                {% if item.id in rated_item_ids %}
+                <span class="rate-btn rated"><i class="fa fa-star"></i> <span>Rated</span></span>
+                {% elif item.id in rating_open_item_ids %}
+                <button type="button" class="rate-btn" data-oid="{{ item.id }}" data-pid="{{ item.product.id }}" data-name="{{ item.product.name }}">
+                  <i class="fa fa-star-o"></i> <span>Rate</span>
+                </button>
+                {% else %}
+                <span class="rate-expired"><i class="fa fa-clock-o"></i> Review window closed</span>
+                {% endif %}
+              {% endif %}
+            </span>
+          </div>
+          {% endfor %}
+
+          <div class="order-footer">
+            <div class="order-address">
+              <div style="margin-bottom:8px;">
+                <i class="fa fa-map-marker me-1"></i> {{ order.address }}
+                {% if order.latitude and order.longitude %}
+                <a href="https://www.google.com/maps?q={{ order.latitude }},{{ order.longitude }}" target="_blank"
+                   style="margin-left:10px;">
+                  <i class="fa fa-map-pin"></i> View on map
+                </a>
+                {% endif %}
+              </div>
+              <div>
+                <i class="fa fa-phone me-1"></i>
+                <a href="tel:{{ order.phone }}">{{ order.phone }}</a>
+                {% if order.alternate_phone %}
+                &nbsp;&nbsp;
+                <i class="fa fa-phone me-1" style="color:#6B5BD6;"></i>
+                <a href="tel:{{ order.alternate_phone }}" style="color:#3C3489;">{{ order.alternate_phone }}</a>
+                {% endif %}
+                {% if order.razorpay_pay_id %}
+                &nbsp;&nbsp;
+                <i class="fa fa-credit-card me-1"></i>
+                <span style="color:#1E7A3C;font-weight:700;">{{ order.payment_status }}</span>
+                {% endif %}
+              </div>
+            </div>
+
+            <div style="margin-top:8px;">
+              <div id="alt-form-{{ order.id }}" style="display:none;margin-top:6px;">
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                  <input type="tel" id="alt-input-{{ order.id }}" class="form-control"
+                         style="max-width:200px;" placeholder="10-digit number" maxlength="10"
+                         inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')"
+                         value="{% if order.alternate_phone %}{{ order.alternate_phone }}{% endif %}">
+                  <button class="btn btn-primary btn-sm"
+                          data-url="{% url 'update_alternate_phone' order.id %}"
+                          data-oid="{{ order.id }}" onclick="saveOrderAlt(this)">
+                    <i class="fa fa-check me-1"></i>Save
+                  </button>
+                  <button class="btn btn-secondary btn-sm" onclick="toggleOrderAlt({{ order.id }});return false;">Cancel</button>
+                </div>
+                <p id="alt-msg-{{ order.id }}" style="font-size:12px;color:#dc3545;margin:6px 0 0;display:none;"></p>
+              </div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+              <div class="order-total">Total: Rs. {{ order.total_amount|stringformat:'d' }}</div>
+              {% if order.status != 'Cancelled' %}
+              <a class="btn-invoice" href="{% url 'order_invoice_pdf' order.id %}">
+                <i class="fa fa-file-pdf-o"></i> Download Invoice
+              </a>
+              {% endif %}
+              {% if order.status == 'Pending' or order.status == 'Processing' %}
+              <button type="button" class="btn-cancel" onclick="openCancelModal({{ order.id }})">
+                <i class="fa fa-times"></i> Cancel Order
+              </button>
+              {% elif order.status == 'Cancelled' and order.cancel_reason %}
+              <div class="order-cancel-reason">
+                <i class="fa fa-info-circle"></i> Cancelled reason: {{ order.cancel_reason }}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+        </div>
+        {% empty %}
+        <div class="empty-box">
+          <i class="fa fa-shopping-bag"></i>
+          <p>You have no orders yet.</p>
+          <a href="{% url 'home' %}" class="btn-shop">Start Shopping</a>
+        </div>
+        {% endfor %}
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- Cancel reason modal -->
+<div class="cancel-modal-overlay" id="cancelModal" aria-hidden="true">
+  <div class="cancel-modal-card" role="alertdialog" aria-modal="true" aria-labelledby="cancelModalTitle">
+    <h5 class="cancel-modal-title" id="cancelModalTitle">
+      <i class="fa fa-times-circle"></i> Cancel Order
+    </h5>
+    <p class="cancel-modal-sub">Please tell us why you're cancelling this order.</p>
+    <div class="cancel-reasons" id="cancelReasons">
+      <label class="cancel-reason selected">
+        <input type="radio" name="cancelReason" value="Changed my mind" checked>
+        <span>Changed my mind</span>
+      </label>
+      <label class="cancel-reason">
+        <input type="radio" name="cancelReason" value="Ordered by mistake">
+        <span>Ordered by mistake</span>
+      </label>
+      <label class="cancel-reason">
+        <input type="radio" name="cancelReason" value="Found a better price elsewhere">
+        <span>Found a better price elsewhere</span>
+      </label>
+      <label class="cancel-reason">
+        <input type="radio" name="cancelReason" value="Delivery taking too long">
+        <span>Delivery taking too long</span>
+      </label>
+      <label class="cancel-reason">
+        <input type="radio" name="cancelReason" value="Payment issue">
+        <span>Payment issue</span>
+      </label>
+      <label class="cancel-reason">
+        <input type="radio" name="cancelReason" value="Other">
+        <span>Other</span>
+      </label>
+    </div>
+    <input type="text" id="cancelReasonOther" class="form-control cancel-reason-other"
+           placeholder="Type your reason..." maxlength="200" disabled>
+    <div class="cancel-modal-actions">
+      <button type="button" class="cancel-back-btn" onclick="closeCancelModal()">Back</button>
+      <button type="button" class="cancel-confirm-btn" id="cancelConfirmBtn" onclick="confirmCancelOrder()">
+        <i class="fa fa-times me-1"></i>Confirm Cancel
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="rate-modal-overlay" id="rateModal" aria-hidden="true">
+  <div class="rate-modal-card" role="alertdialog" aria-modal="true" aria-labelledby="rateModalTitle">
+    <h5 class="cancel-modal-title" id="rateModalTitle" style="margin-top:0;">
+      <i class="fa fa-star" style="color:#F5C76F;"></i> Rate Product
+    </h5>
+    <p class="rate-modal-sub" id="rateProductName" style="font-size:13px;font-weight:700;color:#1a1a1a;margin:0 0 2px;"></p>
+    <p class="rate-modal-hint" style="font-size:12px;color:#999;margin:0 0 6px;">How did you like this product?</p>
+    <input type="hidden" id="rateOrderItemId">
+    <div class="rate-stars" id="rateStars">
+      <i class="fa fa-star-o" data-v="1"></i>
+      <i class="fa fa-star-o" data-v="2"></i>
+      <i class="fa fa-star-o" data-v="3"></i>
+      <i class="fa fa-star-o" data-v="4"></i>
+      <i class="fa fa-star-o" data-v="5"></i>
+    </div>
+    <textarea id="rateComment" class="form-control" rows="3" maxlength="500"
+              placeholder="Share your experience (optional)" style="width:100%;resize:none;"></textarea>
+    <label for="rateImage" style="display:flex;align-items:center;gap:8px;margin-top:12px;padding:11px 14px;border:1.5px dashed #c9c4ea;border-radius:12px;cursor:pointer;font-size:13px;font-weight:600;color:#3C3489;background:#faf9fd;">
+      <i class="fa fa-camera"></i> <span id="rateImageLabel">Add photos &amp; videos (optional)</span>
+      <input type="file" id="rateImage" accept="image/jpeg,image/jpg,image/png,image/webp,video/mp4,video/webm,video/quicktime" multiple style="display:none;">
+    </label>
+    <div class="rate-media-preview" id="rateMediaPreview"></div>
+    <div class="rate-modal-actions" style="display:flex;gap:10px;margin-top:18px;">
+      <button type="button" class="cancel-back-btn" style="flex:1;" onclick="closeRateModal()">Back</button>
+      <button type="button" class="cancel-confirm-btn" id="rateConfirmBtn"
+              style="flex:1;background:linear-gradient(135deg,#F5C76F,#D4AF37);color:#171136;box-shadow:0 8px 18px rgba(212,175,55,.3);"
+              onclick="submitRating()">Submit Rating</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleOrderAlt(oid) {
+  const form = document.getElementById('alt-form-' + oid);
+  form.style.display = (form.style.display === 'none') ? 'block' : 'none';
+}
+
+var rateModal = document.getElementById('rateModal');
+
+function saveOrderAlt(btn) {
+  const oid = btn.dataset.oid;
+  const input = document.getElementById('alt-input-' + oid);
+  const msg = document.getElementById('alt-msg-' + oid);
+  const phone = input.value.trim();
+  if (!phone) {
+    msg.textContent = 'Enter a phone number.'; msg.style.display = 'block'; return;
+  }
+  btn.disabled = true;
+  fetch(btn.dataset.url, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+    body: new URLSearchParams({ phone: phone })
+  })
+  .then(r => r.json().then(d => ({ ok: r.ok, d: d })))
+  .then(function({ ok, d }) {
+    btn.disabled = false;
+    if (!ok || d.error) {
+      msg.textContent = d.error || 'Failed to save. Please try again.';
+      msg.style.display = 'block';
+      return;
+    }
+    window.location.reload();
+  })
+  .catch(function() {
+    btn.disabled = false;
+    msg.textContent = 'Network error. Please try again.';
+    msg.style.display = 'block';
+  });
+}
+
+var cancelModal = document.getElementById('cancelModal');
+var cancelOid = '';
+var otherInput = document.getElementById('cancelReasonOther');
+var confirmBtn = document.getElementById('cancelConfirmBtn');
+
+function setCancelReasonUI() {
+  var selected = document.querySelector('input[name="cancelReason"]:checked');
+  otherInput.disabled = !(selected && selected.value === 'Other');
+  if (!otherInput.disabled) otherInput.focus();
+  document.querySelectorAll('#cancelReasons .cancel-reason').forEach(function(label) {
+    label.classList.toggle('selected', label.querySelector('input').checked);
+  });
+}
+
+function openCancelModal(oid) {
+  cancelOid = oid;
+  var first = document.querySelector('input[name="cancelReason"]');
+  first.checked = true;
+  otherInput.value = '';
+  otherInput.disabled = true;
+  confirmBtn.disabled = false;
+  setCancelReasonUI();
+  cancelModal.classList.add('show');
+  cancelModal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCancelModal() {
+  cancelModal.classList.remove('show');
+  cancelModal.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+document.querySelectorAll('input[name="cancelReason"]').forEach(function(radio) {
+  radio.addEventListener('change', setCancelReasonUI);
+});
+otherInput.addEventListener('input', function() {
+  confirmBtn.disabled = !otherInput.value.trim();
+});
+cancelModal.addEventListener('click', function(e) {
+  if (e.target === cancelModal) closeCancelModal();
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && cancelModal.classList.contains('show')) closeCancelModal();
+});
+
+function confirmCancelOrder() {
+  var selected = document.querySelector('input[name="cancelReason"]:checked');
+  var reason = selected ? selected.value : '';
+  if (selected && selected.value === 'Other') {
+    reason = otherInput.value.trim();
+    if (!reason) {
+      otherInput.focus();
+      return;
+    }
+  }
+  confirmBtn.disabled = true;
+  fetch('/cancel_order/' + cancelOid, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+    body: new URLSearchParams({ reason: reason })
+  })
+  .then(function() { window.location.href = '/my_orders'; })
+  .catch(function() {
+    confirmBtn.disabled = false;
+    alert('Network error. Please try again.');
+  });
+}
+
+var rateModal = document.getElementById('rateModal');
+var rateStars = document.getElementById('rateStars');
+var rateOidEl = document.getElementById('rateOrderItemId');
+var rateNameEl = document.getElementById('rateProductName');
+var rateComment = document.getElementById('rateComment');
+var rateImage = document.getElementById('rateImage');
+var rateImageLabel = document.getElementById('rateImageLabel');
+var rateConfirm = document.getElementById('rateConfirmBtn');
+var rateMediaPreview = document.getElementById('rateMediaPreview');
+var rateMediaFiles = [];
+var rateVal = 0;
+
+function renderStars(v) {
+  rateVal = v;
+  [].forEach.call(rateStars.children, function(star) {
+    var on = parseInt(star.dataset.v, 10) <= v;
+    star.className = 'fa ' + (on ? 'fa-star active' : 'fa-star-o');
+  });
+}
+
+function renderRatePreview() {
+  rateMediaPreview.innerHTML = '';
+  rateImageLabel.textContent = rateMediaFiles.length
+    ? rateMediaFiles.length + ' file(s) selected' : 'Add photos & videos (optional)';
+  rateMediaFiles.forEach(function(file, i) {
+    var isVideo = file.type.indexOf('video/') === 0;
+    var wrap = document.createElement('div');
+    wrap.className = 'rate-prev-item';
+    var el = document.createElement(isVideo ? 'video' : 'img');
+    if (isVideo) { el.muted = true; el.setAttribute('playsinline', ''); }
+    el.src = URL.createObjectURL(file);
+    if (isVideo) {
+      var badge = document.createElement('div');
+      badge.className = 'rate-prev-video-badge';
+      badge.innerHTML = '<i class="fa fa-play"></i>';
+      wrap.appendChild(badge);
+    }
+    wrap.appendChild(el);
+    var rm = document.createElement('button');
+    rm.type = 'button';
+    rm.className = 'rate-prev-remove';
+    rm.innerHTML = '<i class="fa fa-times"></i>';
+    rm.setAttribute('aria-label', 'Remove');
+    rm.addEventListener('click', function() {
+      URL.revokeObjectURL(el.src);
+      rateMediaFiles.splice(i, 1);
+      renderRatePreview();
+    });
+    wrap.appendChild(rm);
+    rateMediaPreview.appendChild(wrap);
+  });
+}
+
+function openRateModal(oid, name) {
+  rateOidEl.value = oid;
+  rateNameEl.textContent = name;
+  rateComment.value = '';
+  rateImage.value = '';
+  rateMediaFiles = [];
+  renderRatePreview();
+  renderStars(0);
+  rateModal.classList.add('show');
+  rateModal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeRateModal() {
+  rateModal.classList.remove('show');
+  rateModal.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+if (rateImage) {
+  rateImage.addEventListener('change', function() {
+    var remaining = 6 - rateMediaFiles.length;
+    [].forEach.call(rateImage.files, function(file) {
+      if (remaining <= 0) return;
+      if (!/^(image|video)\//.test(file.type)) return;
+      rateMediaFiles.push(file);
+      remaining--;
+    });
+    rateImage.value = '';
+    renderRatePreview();
+  });
+}
+
+[].forEach.call(rateStars.children, function(star) {
+  star.addEventListener('click', function() {
+    renderStars(parseInt(star.dataset.v, 10));
+  });
+});
+
+function submitRating() {
+  if (!rateVal) { alert('Please select a star rating.'); return; }
+  rateConfirm.disabled = true;
+  var fd = new FormData();
+  fd.append('order_item_id', rateOidEl.value);
+  fd.append('rating', rateVal);
+  fd.append('comment', rateComment.value);
+  if (rateMediaFiles.length) {
+    rateMediaFiles.forEach(function(file) { fd.append('media', file, file.name); });
+  } else if (rateImage.files && rateImage.files[0]) {
+    fd.append('image', rateImage.files[0]);
+  }
+  fetch('/rate-product', {
+    method: 'POST',
+    headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+    body: fd
+  })
+  .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, d: d }; }); })
+  .then(function(res) {
+    rateConfirm.disabled = false;
+    if (!res.ok || res.d.error) {
+      alert(res.d.error || 'Failed to submit. Please try again.');
+      return;
+    }
+    closeRateModal();
+    window.location.reload();
+  })
+  .catch(function() {
+    rateConfirm.disabled = false;
+    alert('Network error. Please try again.');
+  });
+}
+
+document.querySelectorAll('.rate-btn:not(.rated)').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    openRateModal(btn.dataset.oid, btn.dataset.name);
+  });
+});
+
+rateModal.addEventListener('click', function(e) {
+  if (e.target === rateModal) closeRateModal();
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && rateModal.classList.contains('show')) closeRateModal();
+});
+</script>
+{% endblock %}

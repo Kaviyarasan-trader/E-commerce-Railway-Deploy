@@ -1,0 +1,191 @@
+{% extends 'shop/admin/base.html' %}
+{% block title %}Order #{{ order.id }}{% endblock %}
+{% block page_title %}Order #{{ order.id }}{% endblock %}
+{% block content %}
+
+<div class="row g-3">
+  <!-- Order Info -->
+  <div class="col-md-6">
+    <div class="card-custom">
+      <div class="card-header">Order Details</div>
+      <div class="card-body">
+        <table style="width:100%;font-size:13px;">
+          <tr><td style="padding:6px 0;color:#a9a2d0;">Customer</td><td>{{ order.user.username }}</td></tr>
+          <tr><td style="padding:6px 0;color:#a9a2d0;">Phone</td><td><a href="tel:{{ order.phone }}" style="color:#F5C76F;">{{ order.phone }}</a></td></tr>
+          <tr>
+            <td style="padding:6px 0;color:#a9a2d0;">Alternate Phone</td>
+            <td>
+              <div id="admin-alt-display">
+                {% if order.alternate_phone %}
+                <a href="tel:{{ order.alternate_phone }}" style="color:#F5C76F;">{{ order.alternate_phone }}</a>
+                <a href="#" onclick="adminToggleAlt(event);return false;" style="font-size:11px;margin-left:8px;color:#8f86bd;">Edit</a>
+                {% else %}
+                <span style="color:#6c757d;">&mdash;</span>
+                <a href="#" onclick="adminToggleAlt(event);return false;" style="font-size:11px;margin-left:8px;color:#F5C76F;">Add</a>
+                {% endif %}
+              </div>
+              <div id="admin-alt-form" style="display:none;margin-top:6px;">
+                <div style="display:flex;gap:8px;align-items:center;">
+                  <input type="tel" id="admin-alt-input" class="form-control form-control-sm-custom"
+                         style="max-width:180px;" placeholder="10-digit number" maxlength="10"
+                         inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')"
+                         value="{% if order.alternate_phone %}{{ order.alternate_phone }}{% endif %}">
+                  <button class="btn btn-dark btn-sm" style="border-radius:8px;"
+                          data-url="{% url 'update_alternate_phone' order.id %}"
+                          onclick="adminSaveAlt(this)"><i class="fa fa-check"></i></button>
+                </div>
+                <p id="admin-alt-msg" style="font-size:12px;color:#f88;margin:6px 0 0;display:none;"></p>
+              </div>
+            </td>
+          </tr>
+          <tr><td style="padding:6px 0;color:#a9a2d0;">Address</td><td>{{ order.address }}</td></tr>
+          {% if order.latitude and order.longitude %}
+          <tr>
+            <td style="padding:6px 0;color:#a9a2d0;">Location</td>
+            <td>
+              {{ order.latitude|floatformat:5 }}, {{ order.longitude|floatformat:5 }}
+              <a href="https://www.google.com/maps?q={{ order.latitude }},{{ order.longitude }}" target="_blank" style="font-size:11px;margin-left:6px;">
+                <i class="fa fa-map-marker-alt"></i> View on map
+              </a>
+            </td>
+          </tr>
+          {% endif %}
+          <tr><td style="padding:6px 0;color:#a9a2d0;">Total Amount</td><td><strong>Rs.{{ order.total_amount|floatformat:0 }}</strong></td></tr>
+          <tr><td style="padding:6px 0;color:#a9a2d0;">Payment</td>
+            <td>
+              {% if order.payment_status == 'Paid' %}
+                <span class="badge bg-success">Paid</span>
+              {% else %}
+                <span class="badge bg-warning text-dark">{{ order.payment_status }}</span>
+              {% endif %}
+            </td>
+          </tr>
+          <tr><td style="padding:6px 0;color:#a9a2d0;">Date</td><td>{{ order.created_at|date:"d M Y, h:i A" }}</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Update Status -->
+  {% if perms.shop.change_order %}
+  <div class="col-md-6">
+    <div class="card-custom">
+      <div class="card-header">Update Status</div>
+      <div class="card-body">
+        {% if order.status == 'Cancelled' and order.cancel_reason %}
+        <div class="alert alert-danger mb-3" role="alert">
+          <i class="fa fa-ban me-1"></i> This order was cancelled by the user. Status cannot be changed.
+          {% if order.cancel_reason %}
+          <div style="margin-top:8px; font-weight:600;">Reason: {{ order.cancel_reason }}</div>
+          {% endif %}
+          {% if order.cancelled_at %}
+          <div style="margin-top:4px; font-size:12px; opacity:.85;">Cancelled on {{ order.cancelled_at|date:"d M Y, h:i A" }}</div>
+          {% endif %}
+        </div>
+        {% else %}
+        <form method="POST" action="{% url 'admin_order_status' order.id %}">
+          {% csrf_token %}
+          <div class="d-flex gap-2 align-items-center">
+            <select name="status" class="form-control form-control-sm-custom" style="flex:1;">
+              {% for key, val in ORDER_STATUS %}
+              <option value="{{ key }}" {% if order.status == key %}selected{% endif %}>{{ val }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-dark btn-sm" style="border-radius:8px;">
+              <i class="fa fa-refresh"></i> Update
+            </button>
+          </div>
+        </form>
+        {% endif %}
+        <div class="mt-3">
+          <span class="badge badge-status"
+            {% if order.status == 'Pending' %} style="background:#6c757d;"
+            {% elif order.status == 'Processing' %} style="background:#0dcaf0;"
+            {% elif order.status == 'Shipped' %} style="background:#0d6efd;"
+            {% elif order.status == 'Delivered' %} style="background:#198754;"
+            {% elif order.status == 'Cancelled' %} style="background:#dc3545;"
+            {% endif %}>{{ order.status }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Order Items -->
+  <div class="col-12">
+    <div class="card-custom">
+      <div class="card-header">Items ({{ order.items.count }})</div>
+      <div class="card-body p-0">
+        <table class="table table-custom">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Qty</th>
+              <th>Price</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in order.items.all %}
+            <tr>
+              <td data-label="Product">{{ item.product.name }}</td>
+              <td data-label="Qty">{{ item.quantity }}</td>
+              <td data-label="Price">Rs.{{ item.price|floatformat:0 }}</td>
+              <td data-label="Total"><strong>Rs.{{ item.total_cost|floatformat:0 }}</strong></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mt-3">
+  <a href="{% url 'admin_orders' %}" class="btn btn-outline-secondary btn-sm" style="border-radius:8px;">
+    <i class="fa fa-arrow-left"></i> Back to Orders
+  </a>
+</div>
+
+<script>
+function adminToggleAlt(e) {
+  e.preventDefault();
+  const form = document.getElementById('admin-alt-form');
+  form.style.display = (form.style.display === 'none') ? 'block' : 'none';
+  if (form.style.display === 'block') { document.getElementById('admin-alt-input').focus(); }
+  const msg = document.getElementById('admin-alt-msg');
+  msg.style.display = 'none';
+}
+
+function adminSaveAlt(btn) {
+  const input = document.getElementById('admin-alt-input');
+  const msg = document.getElementById('admin-alt-msg');
+  const phone = input.value.trim();
+  if (!phone) {
+    msg.textContent = 'Enter a phone number.'; msg.style.display = 'block'; return;
+  }
+  btn.disabled = true;
+  fetch(btn.dataset.url, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+    body: new URLSearchParams({ phone: phone })
+  })
+  .then(r => r.json().then(d => ({ ok: r.ok, d: d })))
+  .then(function({ ok, d }) {
+    btn.disabled = false;
+    if (!ok || d.error) {
+      msg.textContent = d.error || 'Failed to save. Please try again.';
+      msg.style.display = 'block';
+      return;
+    }
+    window.location.reload();
+  })
+  .catch(function() {
+    btn.disabled = false;
+    msg.textContent = 'Network error. Please try again.';
+    msg.style.display = 'block';
+  });
+}
+</script>
+
+{% endblock %}

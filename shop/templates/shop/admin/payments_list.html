@@ -1,0 +1,98 @@
+{% extends 'shop/admin/base.html' %}
+{% block title %}Payments{% endblock %}
+{% block page_title %}Payments{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3" style="flex-wrap:wrap;gap:10px;">
+  <form method="GET" style="max-width:420px;flex:1;" onsubmit="return false;">
+    <div class="input-group position-relative">
+      <input type="text" name="q" id="adminPaymentSearch" class="form-control form-control-sm-custom has-clear-x" placeholder="Search by user, order #, razorpay order id..." value="{{ query }}" style="border-radius:6px 0 0 6px;" autocomplete="off">
+      <span id="clearX" class="search-clear-x hidden" title="Clear search"><i class="fa fa-times"></i></span>
+      <button class="btn btn-dark btn-sm" style="border-radius:0 6px 6px 0;"><i class="fa fa-search"></i></button>
+    </div>
+  </form>
+  <select id="adminPaymentStatus" class="form-select form-select-sm-custom" style="border-radius:8px;min-width:150px;" aria-label="Filter by status">
+    <option value="">All statuses</option>
+    <option value="PENDING" {% if status_filter == "PENDING" %}selected{% endif %}>Pending</option>
+    <option value="SUCCESS" {% if status_filter == "SUCCESS" %}selected{% endif %}>Success</option>
+    <option value="FAILED" {% if status_filter == "FAILED" %}selected{% endif %}>Failed</option>
+    <option value="CANCELLED" {% if status_filter == "CANCELLED" %}selected{% endif %}>Cancelled</option>
+  </select>
+</div>
+
+<div id="resultsInfo" style="font-size:13px;color:#a9a2d0;margin-bottom:10px;">
+  Showing results for <strong id="queryText">{{ query }}</strong>{% if query and status_filter %} &middot; {% endif %}{% if status_filter %}<strong>{{ status_filter|title }}</strong>{% endif %} &middot; <span id="resultCount"></span>
+</div>
+
+<div class="card-custom">
+  <div class="card-body p-0" style="overflow-x:auto;">
+    <table class="table table-custom">
+      <thead>
+        <tr>
+          <th>Payment</th>
+          <th>Customer</th>
+          <th>Order</th>
+          <th>Amount</th>
+          <th>Gateway</th>
+          <th>Status</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      {% include 'shop/admin/partials/payment_rows.html' %}
+    </table>
+  </div>
+</div>
+
+<script>
+(function () {
+  const input = document.getElementById('adminPaymentSearch');
+  const statusSel = document.getElementById('adminPaymentStatus');
+  if (!input || !statusSel) return;
+  const tbody = document.querySelector('.table-custom tbody');
+  const info = document.getElementById('resultsInfo');
+  const queryText = document.getElementById('queryText');
+  const countEl = document.getElementById('resultCount');
+  const clearX = document.getElementById('clearX');
+  const url = '{% url "admin_payments_rows" %}';
+  let timer = null;
+  let seq = 0;
+  function load() {
+    const q = input.value.trim();
+    const status = statusSel.value;
+    const mySeq = ++seq;
+    fetch(url + '?q=' + encodeURIComponent(q) + '&status=' + encodeURIComponent(status), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(r => r.json())
+      .then(data => {
+        if (mySeq !== seq) return;
+        tbody.innerHTML = data.rows;
+        clearX.classList.toggle('hidden', !q);
+        queryText.textContent = q;
+        info.style.display = (q || status) ? '' : 'none';
+        if (countEl) countEl.textContent = data.count + (data.count === 1 ? ' result' : ' results');
+      })
+      .catch(() => {});
+  }
+  input.addEventListener('input', function () {
+    clearX.classList.toggle('hidden', !this.value.trim());
+    clearTimeout(timer);
+    timer = setTimeout(load, 300);
+  });
+  statusSel.addEventListener('change', load);
+  if (clearX) {
+    clearX.addEventListener('click', function () {
+      input.value = '';
+      clearX.classList.add('hidden');
+      clearTimeout(timer);
+      load();
+      input.focus();
+    });
+  }
+  var q0 = input.value.trim();
+  var status0 = statusSel.value;
+  queryText.textContent = q0;
+  info.style.display = (q0 || status0) ? '' : 'none';
+  clearX.classList.toggle('hidden', !q0);
+})();
+</script>
+
+{% endblock %}

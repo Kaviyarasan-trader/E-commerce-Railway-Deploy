@@ -1,0 +1,326 @@
+{% extends 'shop/layouts/main.html' %}
+{% load static %}
+{% block title %}
+  Cart | KaviBazaar
+{% endblock title %}
+{% block content %}
+
+<style>
+  .cart-section {
+    background: linear-gradient(180deg, #f6f4ff 0%, #faf9f6 100%);
+    min-height: 600px;
+    padding: 48px 0 64px;
+  }
+  .section-eyebrow {
+    font-size: 11px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: #8b84c8;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .section-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #1a1a1a;
+    letter-spacing: -0.02em;
+    margin-bottom: 12px;
+  }
+  .section-underline {
+    width: 56px; height: 4px;
+    background: linear-gradient(90deg, #3C3489, #FAC775);
+    border-radius: 4px;
+    margin-bottom: 24px;
+  }
+
+  .cart-item {
+    background: #fff;
+    border-radius: 20px;
+    padding: 18px;
+    margin-bottom: 14px;
+    box-shadow: 0 10px 30px rgba(60,52,137,.07);
+    border: 1px solid rgba(60,52,137,.05);
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .cart-item:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(60,52,137,.12); }
+
+  .cart-img-wrap {
+    width: 88px; height: 88px;
+    flex-shrink: 0;
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .cart-img-wrap img { width: 100%; height: 100%; object-fit: contain; }
+
+  .cart-info { flex: 1 1 200px; min-width: 0; }
+  .cart-product-name {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1a1a;
+    text-decoration: none;
+    margin-bottom: 6px;
+    line-height: 1.4;
+  }
+  .cart-product-name:hover { color: #3C3489; }
+  .cart-price { font-size: 12px; color: #888; }
+
+  .cart-mid { display: flex; align-items: center; gap: 26px; flex-wrap: wrap; margin-left: auto; }
+
+  .qty-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 10px;
+    background: linear-gradient(135deg, #f0eefb, #faf7ef);
+    border: 1px solid #e5e1f0;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #3C3489;
+  }
+
+  .cart-amount { font-weight: 800; color: #1a1a1a; font-size: 15px; }
+
+  .btn-remove {
+    height: 36px;
+    background: transparent;
+    border: 1px solid #F7C1C1;
+    border-radius: 30px;
+    color: #B02A37;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 0 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    transition: all .15s;
+  }
+  .btn-remove:hover {
+    background: #FCEBEB;
+    border-color: #F09595;
+    color: #791F1F;
+    text-decoration: none;
+  }
+
+  /* Summary */
+  .summary-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 10px 30px rgba(60,52,137,.07);
+    border: 1px solid rgba(60,52,137,.05);
+    position: sticky;
+    top: 90px;
+  }
+  .summary-title {
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: #3C3489;
+    margin-bottom: 18px;
+  }
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    color: #666;
+    padding: 8px 0;
+  }
+  .summary-row .free { color: #1E7A3C; font-weight: 700; }
+  .summary-divider { border: none; border-top: 1px dashed #e5e1f0; margin: 10px 0; }
+  .summary-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+  }
+  .summary-total span:first-child { font-size: 14px; font-weight: 700; color: #1a1a1a; }
+  .total-amount { font-size: 22px; font-weight: 800; color: #3C3489; }
+
+  .btn-checkout {
+    width: 100%;
+    height: 50px;
+    background: linear-gradient(135deg, #3C3489, #6B5BD6);
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    padding: 0 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    cursor: pointer;
+    text-decoration: none;
+    box-shadow: 0 8px 20px rgba(60,52,137,.32);
+    transition: transform .12s, box-shadow .12s;
+    margin-top: 8px;
+  }
+  .btn-checkout:hover { color: #fff; transform: translateY(-2px); text-decoration: none; }
+  .btn-checkout:active { transform: scale(.98); }
+
+  .summary-perks { margin-top: 18px; }
+  .summary-perk {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 12px; color: #777; padding: 6px 0;
+  }
+  .summary-perk i { color: #3C3489; width: 16px; text-align: center; }
+
+  .empty-box {
+    text-align: center;
+    padding: 56px 24px;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(60,52,137,.07);
+  }
+  .empty-box svg { opacity: .18; color: #3C3489; margin-bottom: 10px; }
+  .empty-box p { color: #888; font-size: 14px; margin-bottom: 18px; }
+  .btn-shop {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: linear-gradient(135deg, #3C3489, #6B5BD6);
+    color: #fff; border: none; border-radius: 30px;
+    font-size: 13px; font-weight: 700; letter-spacing: .04em;
+    padding: 12px 26px; text-decoration: none;
+    box-shadow: 0 8px 20px rgba(60,52,137,.32);
+    transition: transform .12s, box-shadow .12s;
+  }
+  .btn-shop:hover { color: #fff; transform: translateY(-2px); text-decoration: none; }
+
+  @media (max-width: 575px) {
+    .cart-item { padding: 14px; gap: 14px; }
+    .cart-mid { margin-left: 0; }
+    .summary-perks {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 8px;
+    }
+    .summary-perk {
+      flex: 1 1 0;
+      flex-direction: row;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 4px;
+      text-align: left;
+      font-size: 10px;
+      line-height: 1.25;
+    }
+    .summary-perk i { width: auto; font-size: 13px; flex: none; }
+  }
+</style>
+
+<section class="cart-section">
+  <div class="container">
+    <div class="row">
+      <div class="col-12">
+        <div class="section-eyebrow">KaviBazaar</div>
+        <h1 class="section-title">Your Cart</h1>
+        <div class="section-underline"></div>
+        {% include 'shop/inc/message.html' %}
+      </div>
+
+      {% if cart %}
+      <div class="col-lg-8">
+        {% for item in cart %}
+        <div class="cart-item" id="cart-{{ item.id }}">
+          <a href="{% url 'product_details' item.product.category.name item.product.name %}" class="cart-img-wrap">
+            {% if item.product.product_image %}
+              <img src="{{ item.product.product_image.url }}" alt="{{ item.product.name }}">
+            {% else %}
+              <img src="{% static 'images/no-image.jpg' %}" alt="No Image">
+            {% endif %}
+          </a>
+
+          <div class="cart-info">
+            <a href="{% url 'product_details' item.product.category.name item.product.name %}" class="cart-product-name">
+              {{ item.product.name }}
+            </a>
+            <div class="cart-price">
+              Rs. {{ item.product.selling_price|stringformat:'d' }} per item
+            </div>
+          </div>
+
+          <div class="cart-mid">
+            <span class="qty-badge">Qty: {{ item.product_qty }}</span>
+            <span class="cart-amount amt">{{ item.total_cost|stringformat:'d' }}</span>
+            <a href="{% url 'remove_cart' item.id %}"
+               onclick="return premiumConfirmAction('Remove this item from your cart?', this, { title: 'Remove item from cart?', confirmText: 'Remove', confirmIcon: 'fa-trash' })"
+               class="btn-remove">
+              <i class="fa fa-trash" style="font-size:11px;"></i> Remove
+            </a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="col-lg-4">
+        <div class="summary-card">
+          <div class="summary-title">Price Details</div>
+          <div class="summary-row">
+            <span>Price</span>
+            <span id="net">Rs. 0</span>
+          </div>
+          <div class="summary-row">
+            <span>Delivery</span>
+            <span class="free">Free</span>
+          </div>
+          <hr class="summary-divider">
+          <div class="summary-total">
+            <span>Total Amount</span>
+            <span class="total-amount" id="netTotal">Rs. 0</span>
+          </div>
+          <a href="/place_order" class="btn-checkout">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Checkout
+          </a>
+          <div class="summary-perks">
+            <div class="summary-perk"><i class="fa fa-truck"></i> Free delivery on all orders</div>
+            <div class="summary-perk"><i class="fa fa-rotate-left"></i> 7-day replacement guarantee</div>
+            <div class="summary-perk"><i class="fa fa-shield"></i> 100% secure payments</div>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="col-12">
+        <div class="empty-box">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 4h6l6 22h20l5-15H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="20" cy="40" r="3" fill="currentColor"/>
+            <circle cx="34" cy="40" r="3" fill="currentColor"/>
+          </svg>
+          <p>Your cart is empty.</p>
+          <a href="{% url 'home' %}" class="btn-shop">Start Shopping</a>
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</section>
+
+<script>
+  const nodes = document.querySelectorAll('.amt');
+  const res = Array.from(nodes).reduce((acc, curr) => acc + Number(curr.textContent), 0);
+  const fmt = "Rs. " + res.toLocaleString('en-IN');
+  const net = document.getElementById("net");
+  const netTotal = document.getElementById("netTotal");
+  if (net) net.textContent = fmt;
+  if (netTotal) netTotal.textContent = fmt;
+</script>
+
+{% endblock content %}

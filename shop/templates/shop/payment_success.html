@@ -1,0 +1,132 @@
+{% extends 'shop/layouts/main.html' %}
+{% load static %}
+{% block title %}Payment Successful | KaviBazaar{% endblock %}
+{% block content %}
+{% with first_pay=order.payments.first %}
+<div class="container" style="min-height:500px;padding-bottom:90px;">
+  <div class="row justify-content-center">
+    <div class="col-md-6 text-center">
+      <div style="font-size:72px;color:#28a745;margin-bottom:20px;">
+        <i class="fa fa-check-circle"></i>
+      </div>
+      {% if first_pay.payment_gateway == 'COD' %}
+      <h2 style="font-weight:700;color:#1a1a1a;">Order Placed!</h2>
+      <p style="color:#888;font-size:14px;margin:16px 0;">
+        Your order has been placed successfully.
+        Please keep <strong>Rs. {{ order.total_amount|stringformat:'d' }}</strong> ready to pay on delivery.
+      </p>
+      {% else %}
+      <h2 style="font-weight:700;color:#1a1a1a;">Payment Successful!</h2>
+      <p style="color:#888;font-size:14px;margin:16px 0;">
+        Your order has been placed successfully.
+      </p>
+      {% endif %}
+      <div style="background:#f8f9fa;border-radius:12px;padding:16px;margin:20px 0;text-align:left;">
+        <p style="font-size:12px;color:#aaa;margin-bottom:4px;">Order Summary</p>
+        {% if first_pay.payment_gateway == 'COD' %}
+        <p style="font-size:14px;font-weight:600;margin:0;">Total Payable on Delivery: Rs. {{ order.total_amount|stringformat:'d' }}</p>
+        {% else %}
+        <p style="font-size:14px;font-weight:600;margin:0;">Total Paid: Rs. {{ order.total_amount|stringformat:'d' }}</p>
+        {% endif %}
+      </div>
+
+      {% if order.expected_delivery_date %}
+      <div style="background:#EAF6EE;border:1px solid #C9E8D4;border-radius:12px;padding:16px;margin:20px 0;text-align:left;display:flex;align-items:center;gap:14px;">
+        <div style="width:44px;height:44px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;color:#1E7A3C;font-size:20px;flex-shrink:0;">
+          <i class="fa fa-truck"></i>
+        </div>
+        <div>
+          <p style="font-size:12px;color:#1E7A3C;margin:0 0 2px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;">Expected Delivery</p>
+          <p style="font-size:16px;font-weight:800;color:#14532D;margin:0;">{{ order.expected_delivery_date|date:"l, d M Y" }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      <div style="background:#f8f9fa;border-radius:12px;padding:16px;margin:20px 0;text-align:left;">
+        <p style="font-size:12px;color:#aaa;margin-bottom:8px;"><i class="fa fa-phone me-1"></i> Contact Numbers</p>
+        <p style="font-size:14px;margin:4px 0;">
+          Primary: <strong>{{ order.phone }}</strong>
+        </p>
+        <div id="altPhoneBox">
+          <p style="font-size:14px;margin:4px 0;">
+            Alternate:
+            <strong id="altPhoneValue">
+              {% if order.alternate_phone %}{{ order.alternate_phone }}{% else %}<span style="color:#aaa;font-weight:400;">Not added</span>{% endif %}
+            </strong>
+            <a href="#" id="altPhoneEdit" onclick="toggleAltPhoneEdit(event);return false;" style="font-size:12px;color:#3C3489;margin-left:6px;">
+              {% if order.alternate_phone %}Edit{% else %}Add{% endif %}
+            </a>
+          </p>
+          <div id="altPhoneForm" style="display:none;margin-top:8px;">
+            <p style="font-size:13px;color:#888;margin:0 0 6px;">If we can't reach you on the primary number, our delivery partner will call this one.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <input type="tel" id="altPhoneInput" class="form-control" style="max-width:220px;"
+                     placeholder="10-digit number" maxlength="10" inputmode="numeric"
+                     oninput="this.value=this.value.replace(/\D/g,'')"
+                     value="{% if order.alternate_phone %}{{ order.alternate_phone }}{% endif %}">
+              <button class="btn btn-primary btn-sm" id="altPhoneSave" onclick="saveAltPhone()"><i class="fa fa-check me-1"></i>Save</button>
+              <button class="btn btn-secondary btn-sm" onclick="toggleAltPhoneEdit(event);return false;">Cancel</button>
+            </div>
+          </div>
+          <p id="altPhoneMsg" style="font-size:12px;margin:6px 0 0;display:none;"></p>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <a href="{% url 'my_orders' %}" class="btn btn-primary">View Orders</a>
+        <a href="{% url 'home' %}" class="btn btn-secondary">Continue Shopping</a>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function toggleAltPhoneEdit(e) {
+  e.preventDefault();
+  const form = document.getElementById('altPhoneForm');
+  form.style.display = (form.style.display === 'none') ? 'block' : 'none';
+  if (form.style.display === 'block') { document.getElementById('altPhoneInput').focus(); }
+  const msg = document.getElementById('altPhoneMsg');
+  msg.style.display = 'none';
+}
+
+function saveAltPhone() {
+  const input = document.getElementById('altPhoneInput');
+  const msg = document.getElementById('altPhoneMsg');
+  const btn = document.getElementById('altPhoneSave');
+  const phone = input.value.trim();
+  if (!phone) {
+    msg.style.color = '#dc3545'; msg.textContent = 'Enter a phone number.';
+    msg.style.display = 'block'; return;
+  }
+  btn.disabled = true;
+  fetch('{% url "update_alternate_phone" order.id %}', {
+    method: 'POST',
+    headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+    body: new URLSearchParams({ phone: phone })
+  })
+  .then(r => r.json().then(d => ({ ok: r.ok, d: d })))
+  .then(function({ ok, d }) {
+    btn.disabled = false;
+    if (!ok || d.error) {
+      msg.style.color = '#dc3545';
+      msg.textContent = d.error || 'Failed to save. Please try again.';
+      msg.style.display = 'block';
+      return;
+    }
+    document.getElementById('altPhoneValue').innerHTML = d.alternate_phone;
+    document.getElementById('altPhoneEdit').textContent = 'Edit';
+    document.getElementById('altPhoneForm').style.display = 'none';
+    msg.style.color = '#28a745';
+    msg.textContent = 'Alternate number saved.';
+    msg.style.display = 'block';
+  })
+  .catch(function() {
+    btn.disabled = false;
+    msg.style.color = '#dc3545';
+    msg.textContent = 'Network error. Please try again.';
+    msg.style.display = 'block';
+  });
+}
+</script>
+{% endwith %}
+{% endblock %}

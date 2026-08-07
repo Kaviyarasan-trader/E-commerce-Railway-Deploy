@@ -1,0 +1,605 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static jazzmin %}
+{% get_jazzmin_ui_tweaks as jazzmin_ui %}
+
+{% block bodyclass %}{{ block.super }} dashboard{% endblock %}
+
+{% block content_title %} {% trans 'Dashboard' %} {% endblock %}
+
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% trans 'Home' %}</a></li>
+        <li class="breadcrumb-item">{% trans 'Dashboard' %}</li>
+    </ol>
+{% endblock %}
+
+
+{% block content %}
+    {% get_side_menu using="app_list" as dashboard_list %}
+    {% if dashboard_list %}
+        {% widthratio dashboard_list|length 2 1 as middle %}
+    {% endif %}
+
+    <style>
+      .kb-charts .card-header { font-weight: 700; }
+      .kb-chart-card { margin-bottom: 1.25rem; }
+      .kb-ticker { display: flex; flex-wrap: wrap; gap: 6px 18px; padding-bottom: 8px; margin-bottom: 6px; border-bottom: 1px dashed rgba(0,0,0,0.15); }
+      .kb-cell { display: flex; flex-direction: column; gap: 1px; min-width: 82px; }
+      .kb-cell-label { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: #6c757d; font-weight: 700; }
+      .kb-cell-val { font-size: 14px; font-weight: 800; color: #212529; }
+      .kb-cell-val.cyan { color: #0c9e8a; }
+      .kb-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 800; letter-spacing: .1em; color: #198754; text-transform: uppercase; }
+      .kb-dot { width: 8px; height: 8px; border-radius: 50%; background: #198754; box-shadow: 0 0 0 0 rgba(25,135,84,0.6); animation: kbPulse 1.6s ease-out infinite; }
+      .kb-badge.paused .kb-dot { animation: none; background: #adb5bd; }
+      .kb-ctrl { width: 26px; height: 26px; border-radius: 8px; border: 1px solid rgba(12,158,138,0.45); background: rgba(12,158,138,0.08); color: #0c9e8a; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+      @keyframes kbPulse {
+        0% { box-shadow: 0 0 0 0 rgba(25,135,84,0.5); }
+        70% { box-shadow: 0 0 0 8px rgba(25,135,84,0); }
+        100% { box-shadow: 0 0 0 0 rgba(25,135,84,0); }
+      }
+      .rk-vibe { animation: rocketVibe 0.12s linear infinite; }
+      @keyframes rocketVibe {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(1.6px); }
+      }
+      #trendRocketSvg { filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.95)); }
+      .rk-flame path {
+        transform-box: fill-box;
+        transform-origin: 50% 0%;
+        animation: flameFlicker 0.15s ease-in-out infinite;
+        filter: drop-shadow(0 0 10px rgba(255, 160, 60, 0.9));
+      }
+      .rk-flame-outer { animation: flameFlicker 0.18s ease-in-out infinite; }
+      .rk-flame-mid { animation: flameFlicker 0.13s ease-in-out infinite; }
+      .rk-flame-core { animation: flameFlicker 0.09s ease-in-out infinite; }
+      @keyframes flameFlicker {
+        0%, 100% { transform: scaleY(calc(0.85 + var(--rk-blast, 0))); opacity: calc(0.9 + var(--rk-blast, 0) * 0.1); }
+        50% { transform: scaleY(calc(1.18 + var(--rk-blast, 0) * 0.6)); opacity: 1; }
+      }
+      #trendBoom .boom-flash,
+      #trendBoom .boom-ring,
+      #trendBoom .boom-spark { opacity: 0; }
+      #trendBoom.boom-on .boom-flash { animation: boomFlash 0.8s ease-out forwards; }
+      #trendBoom.boom-on .boom-ring { animation: boomRing 0.8s ease-out forwards; }
+      #trendBoom.boom-on .boom-ring-2 { animation-delay: 0.08s; }
+      #trendBoom.boom-on .boom-spark { animation: boomSpark 0.8s ease-out forwards; }
+      .boom-flash {
+        position: absolute;
+        width: 34px; height: 34px;
+        left: -17px; top: -17px;
+        border-radius: 50%;
+        background: radial-gradient(circle, #ffffff 0%, #FFE066 45%, #FF7E3D 75%, rgba(255, 126, 61, 0) 100%);
+        box-shadow: 0 0 18px 6px rgba(255, 160, 60, 0.8);
+      }
+      .boom-ring {
+        position: absolute;
+        width: 24px; height: 24px;
+        left: -12px; top: -12px;
+        border-radius: 50%;
+        border: 3px solid rgba(255, 180, 80, 0.95);
+      }
+      .boom-spark {
+        position: absolute;
+        width: 9px; height: 9px;
+        left: -4.5px; top: -4.5px;
+        border-radius: 50%;
+        background: #FFC53D;
+        box-shadow: 0 0 6px rgba(255, 180, 80, 0.95);
+      }
+      @keyframes boomFlash {
+        0% { transform: scale(0.2); opacity: 1; }
+        35% { transform: scale(1.6); opacity: 1; }
+        100% { transform: scale(2.4); opacity: 0; }
+      }
+      @keyframes boomRing {
+        0% { transform: scale(0.2); opacity: 1; }
+        100% { transform: scale(6); opacity: 0; }
+      }
+      @keyframes boomSpark {
+        0% { transform: rotate(var(--a)) translateX(0); opacity: 1; }
+        70% { transform: rotate(var(--a)) translateX(34px); opacity: 1; }
+        100% { transform: rotate(var(--a)) translateX(70px); opacity: 0; }
+      }
+      #trendRocket.rk-blasted { opacity: 0; }
+      @media (max-width: 767px) {
+        #trendRocketSvg { transform: scale(0.55); transform-origin: bottom center; }
+      }
+    </style>
+
+    <div class="kb-charts row">
+      <div class="col-12">
+        <div class="card kb-chart-card">
+          <div class="card-header">Revenue Trend &mdash; Last 6 Months</div>
+          <div class="card-body">
+            <div style="position:relative;">
+            <canvas id="kbRevenueTrend" height="100"></canvas>
+            <div id="trendRocket" style="position:absolute;left:0;top:0;pointer-events:none;z-index:5;transform-origin:30px 62px;--rk-blast:0;">
+              <div class="rk-vibe">
+                <svg id="trendRocketSvg" width="60" height="92" viewBox="0 0 60 92" style="display:block;">
+                  <path d="M30 2 C38 14 42 21 42 28 L18 28 C18 21 22 14 30 2 Z" fill="#ffffff"/>
+                  <path d="M18 28 L18 62 Q18 66 22 66 L38 66 Q42 66 42 62 L42 28 Z" fill="#ffffff"/>
+                  <circle cx="30" cy="42" r="8" fill="#212529"/>
+                  <path d="M18 50 L5 70 L18 64 Z" fill="#ffffff"/>
+                  <path d="M42 50 L55 70 L42 64 Z" fill="#ffffff"/>
+                  <g class="rk-flame">
+                    <path class="rk-flame-outer" d="M22 64 Q30 92 38 64 Z" fill="#FF7E3D"/>
+                    <path class="rk-flame-mid" d="M25 64 Q30 84 35 64 Z" fill="#FFC53D"/>
+                    <path class="rk-flame-core" d="M27 64 Q30 76 33 64 Z" fill="#FFF7E0"/>
+                  </g>
+                </svg>
+              </div>
+            </div>
+            <div id="trendBoom" style="position:absolute;left:0;top:0;width:0;height:0;pointer-events:none;z-index:6;">
+              <div class="boom-flash"></div>
+              <div class="boom-ring"></div>
+              <div class="boom-ring boom-ring-2"></div>
+            </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12">
+        <div class="card kb-chart-card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="fa fa-line-chart"></i> Live Intraday &mdash; {{ today_label }}</span>
+            <span class="d-flex align-items-center" style="gap:8px;">
+              <span class="kb-badge" id="kbBadge"><span class="kb-dot"></span> LIVE</span>
+              <button type="button" id="kbToggleBtn" class="kb-ctrl"><i class="fa fa-pause" id="kbToggleIcon"></i></button>
+              <button type="button" id="kbResetBtn" class="kb-ctrl"><i class="fa fa-refresh"></i></button>
+            </span>
+          </div>
+          <div class="card-body">
+            <div class="kb-ticker">
+              <div class="kb-cell"><span class="kb-cell-label">Time</span><span class="kb-cell-val" id="kbTime">00:00</span></div>
+              <div class="kb-cell"><span class="kb-cell-label">Revenue</span><span class="kb-cell-val cyan" id="kbRev">Rs. 0</span></div>
+              <div class="kb-cell"><span class="kb-cell-label">Day High</span><span class="kb-cell-val cyan" id="kbHigh">Rs. 0</span></div>
+              <div class="kb-cell"><span class="kb-cell-label">Day Low</span><span class="kb-cell-val cyan" id="kbLow">Rs. 0</span></div>
+              <div class="kb-cell"><span class="kb-cell-label">Orders</span><span class="kb-cell-val" id="kbOrders">0</span></div>
+              <div class="kb-cell"><span class="kb-cell-label">Change</span><span class="kb-cell-val" id="kbChange">0.0%</span></div>
+            </div>
+            <canvas id="kbLiveChart" height="78"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12">
+        <div class="card kb-chart-card">
+          <div class="card-header">Intraday Revenue &mdash; {{ today_label }}</div>
+          <div class="card-body">
+            <canvas id="kbIntraday" height="70"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+    <div class="col-lg-9 col-12">
+        <div class="row">
+            <div class="col-md-6 col-sm-12">
+                {% for app in dashboard_list %}
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5 class="m-0">{{ app.name }}</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm">
+                                <tbody>
+                                {% for model in app.models %}
+                                    <tr>
+                                        <td>
+                                            {% if model.url %}<a href="{{ model.url }}">{{ model.name }}</a>{% else %}{{ model.name }}{% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group float-end">
+                                                {% if model.add_url %}
+                                                    <a href="{{ model.add_url }}" class="btn btn-sm {{ jazzmin_ui.button_classes.success }} addlink">{% trans 'Add' %}</a>
+                                                {% endif %}
+                                                {% if model.url %}
+                                                    {% if model.view_only %}
+                                                        <a href="{{ model.url }}" class="btn btn-sm {{ jazzmin_ui.button_classes.info }} viewlink">{% trans 'View' %}</a>
+                                                    {% else %}
+                                                        <a href="{{ model.url }}" class="btn btn-sm {{ jazzmin_ui.button_classes.info }} changelink">{% if model.custom %}{% trans 'Go' %}{% else %}{% trans 'Change' %}{% endif %}</a>
+                                                    {% endif %}
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {% if forloop.counter == middle|add:"0" %}
+                    </div>
+                    <div class="col-md-6 col-sm-12">
+                    {% endif %}
+
+                {% endfor %}
+                </div>
+        </div>
+
+    </div>
+    <div class="col-lg-3 col-12">
+        <div id="content-related">
+            <div class="module" id="recent-actions-module">
+                <h4 class="mb-3">{% trans 'Recent actions' %}</h4>
+                {% load log %}
+                {% get_admin_log 6 as admin_log for_user user %}
+                {% if not admin_log %}
+                    <p>{% trans 'None available' %}</p>
+                {% else %}
+                    <div class="timeline">
+                        {% for entry in admin_log %}
+                            <div>
+                                {% if entry.is_change %}
+                                    <i class="fas fa-edit bg-gray text-xs"></i>
+                                {% elif entry.is_deletion %}
+                                    <i class="fas fa-trash bg-danger text-xs"></i>
+                                {% elif entry.is_addition %}
+                                    <i class="fas fa-plus-circle bg-success text-xs"></i>
+                                {% endif %}
+
+                                <div class="timeline-item">
+                                    <span class="time"><i class="fas fa-clock"></i> {% blocktrans with timesince=entry.action_time|timesince %}{{ timesince }} ago{% endblocktrans %}</span>
+                                    <h3 class="timeline-header no-border">
+                                        {% if entry.is_deletion or not entry.get_admin_url %}
+                                            {{ entry.object_repr }}
+                                        {% else %}
+                                            <a href="{{ entry.get_admin_url }}">{{ entry.object_repr }}</a>
+                                        {% endif %}
+
+                                        {% if entry.model %}
+                                            <span class="mini quiet">
+                                                {% filter capfirst %}
+                                                    {{ entry.model }}
+                                                {% endfilter %}
+                                            </span>
+                                        {% endif %}
+                                    </h3>
+                                    {% if not entry.is_deletion %}
+                                        <div class="timeline-body">
+                                            {% if entry.is_addition %}
+                                                {{ entry }}
+                                            {% else %}
+                                                <ul style="list-style: none; padding: 0;">
+                                                    {% action_message_to_list entry as action_message_list %}
+                                                    {% for action_message in action_message_list %}
+                                                        <li>{{ action_message.msg|style_bold_first_word }}</li>
+                                                    {% endfor %}
+                                                </ul>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                        <div>
+                            <i class="fa fa-clock bg-gray"></i>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+  var monthLabels = {{ revenue_month_labels|safe }};
+  var monthValues = {{ revenue_month_values|safe }};
+  var hourLabels = {{ hour_labels|safe }};
+  var hourRevenue = {{ hour_revenue_values|safe }};
+  var hourCounts = {{ hour_count_values|safe }};
+
+  var axisColor = '#555555';
+  var gridColor = 'rgba(0,0,0,0.08)';
+
+  if (window.Chart) {
+    var trendMax = Math.max.apply(null, monthValues.concat([1]));
+    var trend = new Chart(document.getElementById('kbRevenueTrend'), {
+      type: 'line',
+      data: {
+        labels: monthLabels,
+        datasets: [{
+          label: 'Revenue (Rs.)',
+          data: monthValues,
+          borderColor: '#2ECC71',
+          borderWidth: 3,
+          borderCapStyle: 'round',
+          backgroundColor: function (ctx) {
+            var area = ctx.chart.chartArea;
+            if (!area) return 'rgba(46,204,113,0.25)';
+            var g = ctx.chart.ctx.createLinearGradient(0, area.bottom, 0, area.top);
+            g.addColorStop(0, 'rgba(46,204,113,0.03)');
+            g.addColorStop(1, 'rgba(46,204,113,0.4)');
+            return g;
+          },
+          fill: true,
+          tension: 0.45,
+          pointRadius: 4,
+          pointHoverRadius: 7,
+          pointBackgroundColor: '#2ECC71',
+          pointBorderColor: '#ffffff',
+          pointBorderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        animation: { duration: 1400, easing: 'easeOutQuart' },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: function (ctx) { return ' Rs. ' + ctx.parsed.y.toLocaleString('en-IN'); } } }
+        },
+        scales: {
+          x: { grid: { color: gridColor }, ticks: { color: axisColor } },
+          y: {
+            beginAtZero: true,
+            suggestedMax: trendMax * 1.15,
+            grid: { color: gridColor },
+            ticks: { color: axisColor, callback: function (v) { return 'Rs.' + v.toLocaleString('en-IN'); } }
+          }
+        }
+      }
+    });
+
+    (function trendWave() {
+      var ds = trend.data.datasets[0];
+      var base = monthValues.slice();
+      var start = null;
+      function frame(ts) {
+        if (start === null) start = ts;
+        var t = (ts - start) / 900;
+        ds.data = base.map(function (v, i) { return v * (1 + 0.05 * Math.sin(t + i * 1.1)); });
+        trend.update('none');
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    })();
+
+    (function trendRocket() {
+      var el = document.getElementById('trendRocket');
+      var boom = document.getElementById('trendBoom');
+      if (!el || !boom) return;
+      for (var s = 0; s < 10; s++) {
+        var sp = document.createElement('div');
+        sp.className = 'boom-spark';
+        sp.style.setProperty('--a', (s * 36) + 'deg');
+        boom.appendChild(sp);
+      }
+      var t = 0;
+      var start = null;
+      var holdUntil = -1;
+      var boomed = false;
+      function frame(ts) {
+        if (start === null) start = ts;
+        var dt = Math.min(0.1, (ts - start) / 1000);
+        start = ts;
+        var data = trend.data.datasets[0].data;
+        var n = data.length;
+        if (n >= 2 && trend.scales.y) {
+          if (holdUntil >= 0 && ts >= holdUntil) {
+            t = 0;
+            holdUntil = -1;
+            boomed = false;
+            boom.classList.remove('boom-on');
+            el.classList.remove('rk-blasted');
+          }
+          t += dt * 1.4;
+          if (t >= n - 1) {
+            t = n - 1;
+            if (holdUntil < 0) {
+              holdUntil = ts + 1200;
+              if (!boomed) {
+                boomed = true;
+                boom.classList.add('boom-on');
+                el.classList.add('rk-blasted');
+              }
+            }
+          }
+          var i = Math.floor(t);
+          var f = t - i;
+          var j = Math.min(i + 1, n - 1);
+          var x0 = trend.scales.x.getPixelForValue(i);
+          var x1 = trend.scales.x.getPixelForValue(j);
+          var y0 = trend.scales.y.getPixelForValue(data[i]);
+          var y1 = trend.scales.y.getPixelForValue(data[j]);
+          var x = x0 + (x1 - x0) * f;
+          var y = y0 + (y1 - y0) * f;
+          var ang = Math.atan2(x1 - x0, -(y1 - y0)) * 180 / Math.PI;
+          el.style.transform = 'translate(' + (x - 30) + 'px,' + (y - 62) + 'px) rotate(' + ang + 'deg)';
+          boom.style.transform = 'translate(' + x + 'px,' + y + 'px)';
+          var blast = (t >= n - 1) ? 1 : Math.max(0, Math.min(1, (t - (n - 2.5)) / 1.5));
+          el.style.setProperty('--rk-blast', blast);
+        }
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    })();
+
+    var intraday = new Chart(document.getElementById('kbIntraday'), {
+      type: 'line',
+      data: {
+        labels: hourLabels,
+        datasets: [
+          {
+            label: 'Revenue (Rs.)',
+            data: hourRevenue,
+            borderColor: '#2ECC71',
+            backgroundColor: 'rgba(46,204,113,0.15)',
+            borderWidth: 2.5,
+            tension: 0.4,
+            fill: true,
+            pointRadius: 0,
+            pointHoverRadius: 5,
+            yAxisID: 'y'
+          },
+          {
+            label: 'Orders',
+            data: hourCounts,
+            borderColor: '#6B5BD6',
+            backgroundColor: 'rgba(107,91,214,0.15)',
+            borderWidth: 2,
+            borderDash: [6, 4],
+            tension: 0.4,
+            fill: false,
+            pointRadius: 0,
+            pointHoverRadius: 5,
+            yAxisID: 'y1'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { labels: { color: axisColor, usePointStyle: true, padding: 18 } },
+          tooltip: {
+            callbacks: {
+              label: function (ctx) {
+                if (ctx.dataset.yAxisID === 'y') return ' Revenue: Rs. ' + ctx.parsed.y.toLocaleString('en-IN');
+                return ' Orders: ' + ctx.parsed.y;
+              }
+            }
+          }
+        },
+        scales: {
+          x: { grid: { color: gridColor }, ticks: { color: axisColor, maxTicksLimit: 12 } },
+          y: {
+            position: 'left',
+            grid: { color: gridColor },
+            ticks: { color: '#198754', callback: function (v) { return 'Rs.' + v.toLocaleString('en-IN'); } }
+          },
+          y1: { position: 'right', grid: { drawOnChartArea: false }, beginAtZero: true, ticks: { color: '#6B5BD6' } }
+        }
+      }
+    });
+
+    var live = new Chart(document.getElementById('kbLiveChart'), {
+      type: 'line',
+      data: {
+        labels: hourLabels,
+        datasets: [{
+          label: 'Price (Rs.)',
+          data: [],
+          borderColor: '#3DE0C8',
+          borderWidth: 3,
+          borderCapStyle: 'round',
+          backgroundColor: function (ctx) {
+            var area = ctx.chart.chartArea;
+            if (!area) return 'rgba(61,224,200,0.25)';
+            var g = ctx.chart.ctx.createLinearGradient(0, area.bottom, 0, area.top);
+            g.addColorStop(0, 'rgba(61,224,200,0.02)');
+            g.addColorStop(1, 'rgba(61,224,200,0.35)');
+            return g;
+          },
+          fill: true,
+          tension: 0.45,
+          pointRadius: 3,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#3DE0C8',
+          pointBorderColor: '#ffffff',
+          pointBorderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        animation: { duration: 0 },
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: function (ctx) { return ' Price: Rs. ' + ctx.parsed.y.toLocaleString('en-IN'); } } } },
+        scales: {
+          x: { grid: { color: gridColor }, ticks: { color: axisColor, maxTicksLimit: 12 } },
+          y: {
+            beginAtZero: true,
+            suggestedMax: Math.max.apply(null, hourRevenue.concat([1])) * 1.6,
+            grid: { color: gridColor },
+            ticks: { color: axisColor, callback: function (v) { return 'Rs.' + v.toLocaleString('en-IN'); } }
+          }
+        }
+      }
+    });
+
+    var liveBaseMax = Math.max.apply(null, hourRevenue.concat([1]));
+    var liveValues = (function () {
+      var out = [];
+      var cap = liveBaseMax * 1.6;
+      for (var k = 0; k < hourLabels.length; k++) {
+        var wave = (Math.sin(k * 2.3) * 0.5 + 0.5);
+        var spike = (Math.random() * 1.4) - 0.2;
+        out.push(Math.round(Math.max(0, Math.min(cap, (wave + spike) * cap))));
+      }
+      return out;
+    })();
+
+    (function replay() {
+      var tEl = document.getElementById('kbTime');
+      var rEl = document.getElementById('kbRev');
+      var hEl = document.getElementById('kbHigh');
+      var lEl = document.getElementById('kbLow');
+      var oEl = document.getElementById('kbOrders');
+      var cEl = document.getElementById('kbChange');
+      var toggleBtn = document.getElementById('kbToggleBtn');
+      var toggleIcon = document.getElementById('kbToggleIcon');
+      var resetBtn = document.getElementById('kbResetBtn');
+      var badge = document.getElementById('kbBadge');
+      var ds = live.data.datasets[0];
+      var i = 0;
+      var high = 0;
+      var low = null;
+      var running = true;
+      var timer = null;
+
+      function render(idx) {
+        var v = liveValues[idx];
+        var o = hourCounts[idx] || 0;
+        if (v > high) high = v;
+        if (low === null || v < low) low = v;
+        if (tEl) tEl.textContent = hourLabels[idx];
+        if (rEl) rEl.textContent = 'Rs. ' + v.toLocaleString('en-IN');
+        if (hEl) hEl.textContent = 'Rs. ' + high.toLocaleString('en-IN');
+        if (lEl) lEl.textContent = 'Rs. ' + (low === null ? 0 : low).toLocaleString('en-IN');
+        if (oEl) oEl.textContent = o;
+        if (cEl) {
+          var base = idx > 0 ? liveValues[idx - 1] : 0;
+          var chg = base > 0 ? ((v - base) / base * 100) : 0;
+          cEl.textContent = (chg >= 0 ? '+' : '') + chg.toFixed(1) + '%';
+          cEl.style.color = chg >= 0 ? '#198754' : '#dc3545';
+        }
+      }
+
+      function tick() {
+        if (i >= hourLabels.length) { i = 0; ds.data = []; live.update(); }
+        ds.data.push(liveValues[i]);
+        live.update();
+        render(i);
+        i++;
+      }
+
+      function setRunning(on) {
+        running = on;
+        if (toggleIcon) toggleIcon.className = 'fa ' + (on ? 'fa-pause' : 'fa-play');
+        if (badge) badge.classList.toggle('paused', !on);
+        if (on) { if (!timer) timer = setInterval(tick, 200); }
+        else { if (timer) { clearInterval(timer); timer = null; } }
+      }
+
+      function reset() {
+        i = 0; high = 0; low = null;
+        ds.data = []; live.update(); render(0);
+        ds.data = []; live.update();
+        running = true;
+        setRunning(true);
+      }
+
+      if (toggleBtn) toggleBtn.addEventListener('click', function () { setRunning(!running); });
+      if (resetBtn) resetBtn.addEventListener('click', reset);
+
+      tick();
+      timer = setInterval(tick, 200);
+    })();
+  }
+})();
+</script>
+
+{% endblock %}

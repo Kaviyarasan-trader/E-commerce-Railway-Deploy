@@ -1,0 +1,97 @@
+{% extends 'shop/admin/base.html' %}
+{% block title %}Ratings &amp; Reviews{% endblock %}
+{% block page_title %}Ratings &amp; Reviews{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3" style="flex-wrap:wrap;gap:10px;">
+  <form method="GET" style="max-width:420px;flex:1;" onsubmit="return false;">
+    <div class="input-group position-relative">
+      <input type="text" name="q" id="adminReviewSearch" class="form-control form-control-sm-custom has-clear-x" placeholder="Search by product, user, comment..." value="{{ query }}" style="border-radius:6px 0 0 6px;" autocomplete="off">
+      <span id="clearX" class="search-clear-x hidden" title="Clear search"><i class="fa fa-times"></i></span>
+      <button class="btn btn-dark btn-sm" style="border-radius:0 6px 6px 0;"><i class="fa fa-search"></i></button>
+    </div>
+  </form>
+  <select id="adminReviewRating" class="form-select form-select-sm-custom" style="border-radius:8px;min-width:140px;" aria-label="Filter by rating">
+    <option value="">All ratings</option>
+    {% for v in "12345" %}
+    <option value="{{ v }}" {% if rating_filter == v %}selected{% endif %}>{{ v }} star{{ v|pluralize }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+<div id="resultsInfo" style="font-size:13px;color:#a9a2d0;margin-bottom:10px;">
+  Showing results for <strong id="queryText">{{ query }}</strong>{% if query and rating_filter %} &middot; {% endif %}{% if rating_filter %}<strong>{{ rating_filter }} star</strong>{% endif %} &middot; <span id="resultCount"></span>
+</div>
+
+<div class="card-custom">
+  <div class="card-body p-0" style="overflow-x:auto;">
+    <table class="table table-custom">
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>User</th>
+          <th>Rating</th>
+          <th>Comment</th>
+          <th>Photo</th>
+          <th>Date</th>
+          <th></th>
+        </tr>
+      </thead>
+      {% include 'shop/admin/partials/review_rows.html' %}
+    </table>
+  </div>
+</div>
+
+<script>
+(function () {
+  const input = document.getElementById('adminReviewSearch');
+  const ratingSel = document.getElementById('adminReviewRating');
+  if (!input || !ratingSel) return;
+  const tbody = document.querySelector('.table-custom tbody');
+  const info = document.getElementById('resultsInfo');
+  const queryText = document.getElementById('queryText');
+  const countEl = document.getElementById('resultCount');
+  const clearX = document.getElementById('clearX');
+  const url = '{% url "admin_reviews_rows" %}';
+  let timer = null;
+  let seq = 0;
+  function load() {
+    const q = input.value.trim();
+    const rating = ratingSel.value;
+    const mySeq = ++seq;
+    fetch(url + '?q=' + encodeURIComponent(q) + '&rating=' + encodeURIComponent(rating), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(r => r.json())
+      .then(data => {
+        if (mySeq !== seq) return;
+        tbody.innerHTML = data.rows;
+        clearX.classList.toggle('hidden', !q);
+        queryText.textContent = q;
+        info.style.display = (q || rating) ? '' : 'none';
+        if (countEl) countEl.textContent = data.count + (data.count === 1 ? ' result' : ' results');
+      })
+      .catch(() => {});
+  }
+  input.addEventListener('input', function () {
+    clearX.classList.toggle('hidden', !this.value.trim());
+    clearTimeout(timer);
+    timer = setTimeout(load, 300);
+  });
+  ratingSel.addEventListener('change', load);
+  if (clearX) {
+    clearX.addEventListener('click', function () {
+      input.value = '';
+      clearX.classList.add('hidden');
+      clearTimeout(timer);
+      load();
+      input.focus();
+    });
+  }
+  var q0 = input.value.trim();
+  var rating0 = ratingSel.value;
+  queryText.textContent = q0;
+  info.style.display = (q0 || rating0) ? '' : 'none';
+  clearX.classList.toggle('hidden', !q0);
+})();
+</script>
+
+{% endblock %}

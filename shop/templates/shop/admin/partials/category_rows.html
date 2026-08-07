@@ -1,0 +1,42 @@
+<tbody>
+  {% for cat in categories %}
+  <tr>
+    <td data-label="Image">
+      {% if cat.image %}
+        <img src="{{ cat.image.url }}" class="product-img-thumb" alt="">
+      {% else %}
+        <span style="color:#6f6799;">—</span>
+      {% endif %}
+    </td>
+    <td data-label="Name">{{ cat.name }}</td>
+    <td data-label="Description" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#a9a2d0;">{{ cat.description }}</td>
+    <td data-label="Status">
+      {% if cat.status == 0 %}
+        <span class="badge bg-success">Visible</span>
+      {% else %}
+        <span class="badge bg-secondary">Hidden</span>
+      {% endif %}
+    </td>
+    <td class="actions">
+      {% if perms.shop.change_catagory %}
+      <a href="{% url 'admin_category_edit' cat.id %}" class="btn btn-outline-secondary btn-action btn-sm">
+        <i class="fa fa-pencil"></i> Edit
+      </a>
+      {% endif %}
+      {% if perms.shop.delete_catagory %}
+      <a href="{% url 'admin_category_delete' cat.id %}" class="btn btn-outline-danger btn-action btn-sm"
+         onclick="return premiumConfirmAction('Delete category &quot;{{ cat.name }}&quot;?', this, { title: 'Delete Category?', confirmText: 'Delete', confirmIcon: 'fa-trash' })">
+        <i class="fa fa-trash"></i> Delete
+      </a>
+      {% endif %}
+    </td>
+  </tr>
+  {% empty %}
+  <tr>
+    <td colspan="5" style="text-align:center;color:#8f86bd;padding:40px;">
+      <i class="fa fa-tags" style="font-size:32px;display:block;margin-bottom:10px;"></i>
+      {% if query %}No categories matching "{{ query }}"{% else %}No categories yet{% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</tbody>

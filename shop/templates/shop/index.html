@@ -1,0 +1,181 @@
+{% extends 'shop/layouts/main.html' %}
+{% load static %}
+{% block title %}
+KaviBazaar | Online Shopping
+{% endblock title %}
+{% block content %}
+<style>
+  .deals-wrap { padding-bottom: 48px; }
+  @media (min-width: 992px) {
+    .deals-wrap { padding-top: 32px; }
+  }
+  .cat-nav {
+    background: #fff;
+    border-bottom: 1px solid rgba(60,52,137,.06);
+    padding: 14px 0 12px;
+  }
+  .cat-nav .cat-nav-inner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .cat-nav .cat-nav-track {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    gap: 6px;
+    padding: 2px 4px;
+  }
+  .cat-nav .cat-nav-track::-webkit-scrollbar { display: none; }
+  .cat-nav .cat-nav-arrow {
+    flex: 0 0 auto;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid rgba(60,52,137,.15);
+    background: #fff;
+    color: #3C3489;
+    font-size: 12px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(60,52,137,.10);
+    transition: all .15s;
+  }
+  .cat-nav .cat-nav-arrow:hover:not(:disabled) { background: #3C3489; color: #fff; border-color: transparent; }
+  .cat-nav .cat-nav-arrow:disabled { opacity: .35; cursor: not-allowed; }
+  @media (min-width: 992px) {
+    .cat-nav .cat-nav-arrow { display: inline-flex; }
+  }
+  .cat-nav-item {
+    flex: 0 0 auto;
+    width: 84px;
+    text-align: center;
+    text-decoration: none;
+    color: #333;
+    padding: 6px 4px;
+    border-radius: 12px;
+    transition: background .15s;
+  }
+  .cat-nav-item:hover { background: #f4f2fd; text-decoration: none; }
+  .cat-nav-ico {
+    width: 52px;
+    height: 52px;
+    margin: 0 auto 6px;
+    border-radius: 50%;
+    background: #f4f2fd;
+    border: 1px solid rgba(60,52,137,.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .cat-nav-ico img { width: 100%; height: 100%; object-fit: cover; }
+  .cat-nav-ico i { font-size: 20px; color: #3C3489; }
+  .cat-nav-name {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+</style>
+{% if not request.user.is_staff %}
+{% include 'shop/inc/slider.html' %}
+  <nav class="cat-nav" aria-label="Shop by category">
+    <div class="container cat-nav-inner">
+      <button type="button" class="cat-nav-arrow cat-nav-prev" aria-label="Scroll categories left"><i class="fa fa-chevron-left"></i></button>
+      <div class="cat-nav-track">
+        {% for c in categories %}
+        <a class="cat-nav-item" href="{% url 'collections' c.name %}">
+          <span class="cat-nav-ico">
+            {% if c.image %}
+              <img src="{{ c.image.url }}" alt="{{ c.name }}">
+            {% else %}
+              <i class="fa fa-tags"></i>
+            {% endif %}
+          </span>
+          <span class="cat-nav-name">{{ c.name }}</span>
+        </a>
+        {% endfor %}
+      </div>
+      <button type="button" class="cat-nav-arrow cat-nav-next" aria-label="Scroll categories right"><i class="fa fa-chevron-right"></i></button>
+    </div>
+  </nav>
+  <div class="container deals-wrap">
+    <div class="row row-cols-3 row-cols-md-3 row-cols-lg-4 g-3">
+      <div class="col-12">
+        <p style="font-size:11px; font-weight:500; letter-spacing:0.12em; text-transform:uppercase; color:#999; margin-bottom:4px;">Exclusive deals</p>
+        <h4 class="mb-1" style="font-size:22px; font-weight:600; color:#1a1a1a;">Latest Offers</h4>
+        <div style="width:36px; height:2px; background:#3C3489; border-radius:2px; margin-bottom:20px;"></div>
+      </div>
+      {% for item in products %}
+      <div class="col">
+        <div class="fk-card"
+             onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 20px rgba(0,0,0,0.08)'"
+             onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none'">
+          <a href="{% url 'product_details' item.category.name item.name %}" style="text-decoration:none; color:inherit;">
+            <div class="fk-img">
+              {% if item.product_image %}
+                <img src="{{ item.product_image.url }}" alt="{{ item.name }}">
+              {% else %}
+                <img src="{% static 'images/no-image.jpg' %}" alt="No Image">
+              {% endif %}
+            </div>
+            <div class="fk-body">
+              <p class="fk-cat">{{ item.category.name }}</p>
+              <h5 class="fk-title">{{ item.name }}</h5>
+              {% if item.avg_rating %}
+              <div class="fk-rating" onclick="event.preventDefault();event.stopPropagation();window.location.href='{% url 'product_details' item.category.name item.name %}#reviews';">
+                <i class="fa fa-star"></i>{{ item.avg_rating|floatformat:1 }}
+                <small>({{ item.rating_count }})</small>
+              </div>
+              {% endif %}
+              <div class="fk-price">Rs.{{ item.selling_price|stringformat:'d' }}</div>
+              <div class="fk-meta">
+                {% if item.original_price > item.selling_price %}
+                <span class="fk-mrp">Rs.{{ item.original_price|stringformat:'d' }}</span>
+                <span class="fk-discount">{{ item.discount_percent }}% off</span>
+                {% endif %}
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
+      {% empty %}
+      <div class="col-12">
+        <p style="color:#bbb; font-size:14px;">No offers available at the moment.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+{% endif %}
+<script>
+(function () {
+  var track = document.querySelector('.cat-nav-track');
+  if (!track) return;
+  var prev = document.querySelector('.cat-nav-prev');
+  var next = document.querySelector('.cat-nav-next');
+  var STEP = 216;
+  function update() {
+    if (!prev || !next) return;
+    prev.disabled = track.scrollLeft <= 1;
+    next.disabled = track.scrollLeft >= track.scrollWidth - track.clientWidth - 1;
+  }
+  if (prev) prev.addEventListener('click', function () { track.scrollBy({ left: -STEP, behavior: 'smooth' }); });
+  if (next) next.addEventListener('click', function () { track.scrollBy({ left: STEP, behavior: 'smooth' }); });
+  track.addEventListener('scroll', update);
+  window.addEventListener('resize', update);
+  update();
+})();
+</script>
+{% endblock content %}

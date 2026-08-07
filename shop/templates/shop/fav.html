@@ -1,0 +1,231 @@
+{% extends 'shop/layouts/main.html' %}
+{% load static %}
+{% block title %}
+  Favourites | KaviBazaar
+{% endblock title %}
+{% block content %}
+
+<style>
+  .fav-section {
+    background: linear-gradient(180deg, #f6f4ff 0%, #faf9f6 100%);
+    min-height: 600px;
+    padding: 48px 0 64px;
+  }
+  .section-eyebrow {
+    font-size: 11px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: #8b84c8;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .section-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #1a1a1a;
+    letter-spacing: -0.02em;
+    margin-bottom: 12px;
+  }
+  .section-underline {
+    width: 56px; height: 4px;
+    background: linear-gradient(90deg, #3C3489, #FAC775);
+    border-radius: 4px;
+    margin-bottom: 24px;
+  }
+
+  .fav-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 18px;
+    margin-bottom: 14px;
+    box-shadow: 0 10px 30px rgba(60,52,137,.07);
+    border: 1px solid rgba(60,52,137,.05);
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .fav-card:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(60,52,137,.12); }
+
+  .fav-img-wrap {
+    width: 88px; height: 88px;
+    flex-shrink: 0;
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .fav-img-wrap img {
+    width: 100%; height: 100%;
+    object-fit: contain;
+  }
+
+  .fav-info {
+    flex: 1 1 220px;
+    min-width: 0;
+  }
+  .fav-product-name {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1a1a;
+    text-decoration: none;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .fav-product-name:hover { color: #3C3489; }
+
+  .fav-price {
+    font-size: 16px;
+    font-weight: 800;
+    color: #1a1a1a;
+  }
+  .fav-price span { font-size: 12px; font-weight: 500; color: #888; }
+  .fav-mrp {
+    font-size: 12px;
+    color: #aaa;
+    text-decoration: line-through;
+    margin-left: 8px;
+  }
+
+  .fav-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-left: auto;
+  }
+  .btn-view {
+    height: 38px;
+    background: linear-gradient(135deg, #3C3489, #6B5BD6);
+    color: #fff;
+    border: none;
+    border-radius: 30px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    padding: 0 18px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    text-decoration: none;
+    box-shadow: 0 6px 16px rgba(60,52,137,.28);
+    transition: transform .12s, box-shadow .12s;
+  }
+  .btn-view:hover { color: #fff; transform: translateY(-2px); text-decoration: none; }
+  .btn-remove {
+    height: 38px;
+    background: transparent;
+    border: 1px solid #F7C1C1;
+    border-radius: 30px;
+    color: #B02A37;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 0 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    transition: all .15s;
+  }
+  .btn-remove:hover {
+    background: #FCEBEB;
+    border-color: #F09595;
+    color: #791F1F;
+    text-decoration: none;
+  }
+
+  .empty-box {
+    text-align: center;
+    padding: 56px 24px;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(60,52,137,.07);
+  }
+  .empty-box svg { opacity: .18; color: #3C3489; margin-bottom: 10px; }
+  .empty-box p { color: #888; font-size: 14px; margin-bottom: 18px; }
+  .btn-shop {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: linear-gradient(135deg, #3C3489, #6B5BD6);
+    color: #fff; border: none; border-radius: 30px;
+    font-size: 13px; font-weight: 700; letter-spacing: .04em;
+    padding: 12px 26px; text-decoration: none;
+    box-shadow: 0 8px 20px rgba(60,52,137,.32);
+    transition: transform .12s, box-shadow .12s;
+  }
+  .btn-shop:hover { color: #fff; transform: translateY(-2px); text-decoration: none; }
+
+  @media (max-width: 575px) {
+    .fav-card { padding: 14px; gap: 14px; }
+    .fav-actions { margin-left: 0; width: 100%; justify-content: flex-end; }
+  }
+</style>
+
+<section class="fav-section">
+  <div class="container">
+    <div class="row">
+      <div class="col-12">
+        <div class="section-eyebrow">KaviBazaar</div>
+        <h1 class="section-title">Favourites</h1>
+        <div class="section-underline"></div>
+      </div>
+
+      <div class="col-12">
+        {% for item in fav %}
+        <div class="fav-card" id="fav-{{ item.id }}">
+          <a href="{% url 'product_details' item.product.category.name item.product.name %}" class="fav-img-wrap">
+            {% if item.product.product_image %}
+              <img src="{{ item.product.product_image.url }}" alt="{{ item.product.name }}">
+            {% else %}
+              <img src="{% static 'images/no-image.jpg' %}" alt="No Image">
+            {% endif %}
+          </a>
+
+          <div class="fav-info">
+            <a href="{% url 'product_details' item.product.category.name item.product.name %}" class="fav-product-name">
+              {{ item.product.name }}
+            </a>
+            {% if item.avg_rating %}
+            <div onclick="window.location.href='{% url 'product_details' item.product.category.name item.product.name %}#reviews';" style="display:inline-flex;align-items:center;gap:4px;background:#F6F6F6;border:1px solid #eee;border-radius:6px;padding:2px 8px;font-size:12px;font-weight:700;color:#388E3C;margin-bottom:8px;cursor:pointer;transition:background 0.2s ease;box-shadow:0 0 0 rgba(0,0,0,0);" onmouseover="this.style.background='#EEF2FF';this.style.boxShadow='0 2px 6px rgba(60,52,137,0.12)'" onmouseout="this.style.background='#F6F6F6';this.style.boxShadow='0 0 0 rgba(0,0,0,0)'">
+              <i class="fa fa-star" style="color:#F5A623;font-size:11px;"></i>
+              {{ item.avg_rating|floatformat:1 }}
+              <small style="font-weight:500;color:#888;margin-left:1px;">({{ item.rating_count }})</small>
+            </div>
+            {% endif %}
+            <div>
+              <span class="fav-price"><span>Rs. </span>{{ item.product.selling_price|stringformat:'d' }}</span>
+              {% if item.product.original_price > item.product.selling_price %}
+              <span class="fav-mrp">Rs. {{ item.product.original_price|stringformat:'d' }}</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="fav-actions">
+            <a href="{% url 'product_details' item.product.category.name item.product.name %}" class="btn-view">
+              <i class="fa fa-shopping-cart"></i> Add to Cart
+            </a>
+            <a href="{% url 'remove_fav' item.id %}"
+               onclick="return premiumConfirmAction('Remove this item from your favourites?', this, { title: 'Remove from favourites?', confirmText: 'Remove', confirmIcon: 'fa-trash' })"
+               class="btn-remove">
+              <i class="fa fa-trash" style="font-size:11px;"></i> Remove
+            </a>
+          </div>
+        </div>
+        {% empty %}
+        <div class="empty-box">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M24 40S6 28 6 16a10 10 0 0 1 18-6 10 10 0 0 1 18 6c0 12-18 24-18 24z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          </svg>
+          <p>No favourite items yet.</p>
+          <a href="{% url 'home' %}" class="btn-shop">Start Shopping</a>
+        </div>
+        {% endfor %}
+      </div>
+
+    </div>
+  </div>
+</section>
+
+{% endblock content %}

@@ -1,0 +1,706 @@
+{% extends 'shop/layouts/main.html' %}
+{% load static %}
+{% block title %}My Profile | KaviBazaar{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  .profile-section {
+    background: linear-gradient(180deg, #f6f4ff 0%, #faf9f6 100%);
+    min-height: 600px;
+    padding: 48px 0 64px;
+  }
+  .section-eyebrow {
+    font-size: 11px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: #8b84c8;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .section-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #1a1a1a;
+    letter-spacing: -0.02em;
+    margin-bottom: 12px;
+  }
+  .section-underline {
+    width: 56px; height: 4px;
+    background: linear-gradient(90deg, #3C3489, #FAC775);
+    border-radius: 4px;
+    margin-bottom: 24px;
+  }
+
+  .profile-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: 0 10px 30px rgba(60,52,137,.07);
+    border: 1px solid rgba(60,52,137,.05);
+    position: relative;
+    overflow: hidden;
+  }
+  .profile-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #3C3489, #6B5BD6, #FAC775);
+  }
+  .avatar-circle {
+    width: 84px; height: 84px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3C3489, #6B5BD6);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 34px;
+    font-weight: 800;
+    font-family: Georgia, serif;
+    margin: 0 auto 16px;
+    box-shadow: 0 8px 20px rgba(60,52,137,.3);
+  }
+  .avatar-wrap {
+    position: relative;
+    width: 150px;
+    height: 84px;
+    margin: 0 auto 16px;
+  }
+  .avatar-img {
+    width: 84px; height: 84px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    margin: 0 auto;
+    box-shadow: 0 8px 20px rgba(60,52,137,.3);
+    border: 3px solid #fff;
+  }
+  .avatar-wrap .avatar-circle { margin: 0 auto; }
+  .avatar-edit {
+    position: absolute;
+    top: 10px; right: 4px;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #F5C76F, #D4AF37);
+    border: 2px solid #fff;
+    color: #171136;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 3px 8px rgba(0,0,0,.2);
+    transition: transform .12s;
+  }
+  .avatar-edit:hover { transform: scale(1.1); }
+  .avatar-del {
+    position: absolute;
+    top: 46px; right: 4px;
+    margin: 0;
+  }
+  .avatar-del-btn {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: #dc3545;
+    border: 2px solid #fff;
+    color: #fff;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 3px 8px rgba(0,0,0,.25);
+    transition: transform .12s;
+  }
+  .avatar-del-btn:hover { transform: scale(1.1); }
+  .profile-name {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin-bottom: 2px;
+  }
+  .profile-email {
+    text-align: center;
+    font-size: 13px;
+    color: #999;
+    margin-bottom: 24px;
+  }
+
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid #f0ede6;
+    font-size: 14px;
+  }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-label {
+    color: #999;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .detail-label i { color: #3C3489; width: 18px; text-align: center; }
+  .detail-value { color: #1a1a1a; font-weight: 600; text-align: right; }
+
+  .profile-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 24px;
+  }
+  .btn-ghost {
+    display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid #d8d4e8;
+    border-radius: 30px;
+    padding: 10px 22px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #3C3489;
+    text-decoration: none;
+    transition: all .15s;
+  }
+  .btn-ghost:hover { background: #f4f3fb; border-color: #3C3489; color: #3C3489; text-decoration: none; }
+  .btn-delete {
+    background: transparent;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn-delete:hover { background: #fdecec; border-color: #d93025; color: #d93025; }
+
+  .stat-box {
+    background: #faf9fd;
+    border: 1px solid #f0ede6;
+    border-radius: 14px;
+    text-align: center;
+    padding: 18px 10px;
+  }
+  .stat-box .num { font-size: 22px; font-weight: 800; color: #3C3489; }
+  .stat-box .lbl { font-size: 12px; color: #999; margin-top: 2px; }
+</style>
+
+<section class="profile-section">
+  <div class="container">
+    <div class="row">
+      <div class="col-12">
+        <div class="section-eyebrow">KaviBazaar</div>
+        <h1 class="section-title">My Profile</h1>
+        <div class="section-underline"></div>
+        {% include 'shop/inc/message.html' %}
+      </div>
+
+      <div class="col-lg-6 mx-auto">
+        <div class="profile-card">
+          <div class="avatar-wrap">
+            {% if profile.profile_picture %}
+              <img src="{{ profile.profile_picture.url }}" class="avatar-img" alt="Profile">
+            {% else %}
+              <div class="avatar-circle">{{ request.user.first_name|default:request.user.username|slice:":1"|upper }}</div>
+            {% endif %}
+            <button type="button" class="avatar-edit" title="Change profile picture"
+                    onclick="document.getElementById('picInput').click()">
+              <i class="fa fa-pencil"></i>
+            </button>
+            {% if profile.profile_picture %}
+            <form method="POST" action="{% url 'delete_profile_picture' %}" class="avatar-del"
+                  onsubmit="return confirm('Remove your profile picture?')">
+              {% csrf_token %}
+              <button type="submit" class="avatar-del-btn" title="Delete profile picture"><i class="fa fa-trash"></i></button>
+            </form>
+            {% endif %}
+            <form method="POST" action="{% url 'change_profile_picture' %}" enctype="multipart/form-data" id="picForm">
+              {% csrf_token %}
+              <input type="file" name="profile_picture" id="picInput" accept="image/*" hidden
+                     onchange="document.getElementById('picForm').submit()">
+            </form>
+          </div>
+          <div class="profile-name">
+            {{ request.user.first_name }} {{ request.user.last_name }}
+          </div>
+          <div class="profile-email">{{ request.user.email }}</div>
+
+          <div class="detail-row">
+            <span class="detail-label"><i class="fa fa-user"></i> Full Name</span>
+            <span class="detail-value">{{ request.user.first_name }} {{ request.user.last_name }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label"><i class="fa fa-envelope"></i> Email</span>
+            <span class="detail-value">{{ request.user.email }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label"><i class="fa fa-mobile"></i> Phone</span>
+            <span class="detail-value">{{ profile.mobile_number|default:"Not added" }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label"><i class="fa fa-calendar"></i> Member Since</span>
+            <span class="detail-value">{{ request.user.date_joined|date:"d M Y" }}</span>
+          </div>
+
+          <div class="row g-2 mt-2">
+            <div class="col-6">
+              <div class="stat-box">
+                <div class="num">{{ orders_count }}</div>
+                <div class="lbl">Orders</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="stat-box">
+                <div class="num">{{ cart_count }}</div>
+                <div class="lbl">Cart Items</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="profile-actions">
+            <a href="{% url 'my_orders' %}" class="btn-ghost"><i class="fa fa-list-alt"></i> My Orders</a>
+            <a href="{% url 'edit_profile' %}" class="btn-ghost"><i class="fa fa-pencil"></i> Edit Profile</a>
+            <a href="{% url 'logout' %}" class="btn-ghost"><i class="fa fa-sign-out"></i> Logout</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-8 mx-auto">
+        <div class="profile-card" style="margin-top:24px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
+            <h5 style="font-weight:800;font-size:17px;color:#1a1a1a;margin:0;">
+              <i class="fa fa-book me-2" style="color:#3C3489;"></i> Saved Addresses
+            </h5>
+            <button type="button" id="addAddressBtn" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(145deg,#F5C76F,#D4AF37);color:#171136;border:none;border-radius:30px;padding:7px 16px;font-size:12px;font-weight:800;cursor:pointer;letter-spacing:.5px;">
+              <i class="fa fa-plus"></i> Add Address
+            </button>
+          </div>
+          <p style="font-size:12px;color:#999;margin-bottom:16px;">
+            These addresses can be selected quickly at checkout.
+          </p>
+          <div id="profile-address-list">
+            {% if saved_addresses %}
+            {% for a in saved_addresses %}
+            <div class="saved-addr-item" style="display:flex;align-items:flex-start;gap:12px;border:1px solid #ece9e1;border-radius:12px;padding:12px 14px;margin-bottom:10px;background:#faf9fd;">
+              <div style="flex:1;font-size:13px;">
+                <strong style="color:#3C3489;">{{ a.label|default:'Address' }}</strong>
+                <div style="color:#555;margin-top:2px;">{{ a.address }}{% if a.locality %}, {{ a.locality }}{% endif %}{% if a.landmark %}, {{ a.landmark }}{% endif %} - {{ a.pincode }}</div>
+                {% if a.phone %}
+                <div style="color:#888;font-size:12px;margin-top:2px;"><i class="fa fa-phone me-1"></i>{{ a.phone }}</div>
+                {% endif %}
+              </div>
+              <button type="button" class="delete-addr-btn" data-id="{{ a.id }}" title="Delete"
+                      style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:14px;flex:none;padding:4px;"><i class="fa fa-trash"></i></button>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div id="profile-empty-state" style="text-align:center;padding:20px 10px;border:1px dashed #ddd;border-radius:12px;background:#faf9fd;">
+              <i class="fa fa-map-marker" style="font-size:26px;color:#ccc;"></i>
+              <p style="font-size:13px;color:#999;margin:8px 0 0;">
+                No saved addresses yet.<br>
+                <span style="font-size:12px;color:#bbb;">Click "Add Address" above or tick "Save this address for next time" at checkout.</span>
+              </p>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- Add Address Modal -->
+<div id="addAddressModal" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(15,20,35,0.55);overflow-y:auto;padding:20px;">
+  <div style="width:100%;max-width:440px;margin:auto;max-height:100%;background:#fff;border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,0.3);overflow:hidden;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:linear-gradient(135deg,#3C3489,#241a4f);color:#fff;">
+      <div style="font-size:15px;font-weight:800;"><i class="fa fa-map-marker me-2"></i>Add Address</div>
+      <button type="button" id="addAddrClose" style="background:none;border:none;color:#fff;font-size:22px;line-height:1;cursor:pointer;">&times;</button>
+    </div>
+    <form id="addAddressForm" style="padding:20px;">
+      {% csrf_token %}
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+        <button type="button" id="aaUseLocationBtn" style="display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid #3C3489;color:#3C3489;border-radius:30px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">
+          <i class="fa fa-location-arrow"></i> Use Current Location
+        </button>
+        <span id="aaLocStatus" style="font-size:11px;color:#791F1F;display:none;background:#FCEBEB;border:1px solid #F7C1C1;padding:5px 10px;border-radius:8px;flex:1;"></span>
+      </div>
+      <div id="aaMapWrap" style="display:none;margin-bottom:12px;">
+        <div id="aaMap" style="height:220px;border-radius:12px;border:1px solid #ece9e1;"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;">
+          <span style="font-size:11px;color:#888;"><i class="fa fa-map-pin" style="color:#dc3545;"></i> Move the marker to adjust the pin</span>
+        </div>
+      </div>
+      <input type="hidden" id="aaLatitude" name="latitude" value="">
+      <input type="hidden" id="aaLongitude" name="longitude" value="">
+      <div class="mb-3">
+        <label style="font-size:12px;font-weight:600;color:#555;">Address Label <span style="color:#999;font-weight:400;">(optional - e.g. Home, Office)</span></label>
+        <input type="text" name="label" id="aaLabel" class="form-control" placeholder="e.g. Home, Office" maxlength="100" style="font-size:13px;">
+      </div>
+      <div class="mb-3">
+        <label style="font-size:12px;font-weight:600;color:#555;">Pincode *</label>
+        <input type="text" name="pincode" id="aaPincode" class="form-control" placeholder="600001" maxlength="6" inputmode="numeric" required style="font-size:13px;" oninput="this.value=this.value.replace(/\D/g,'');document.getElementById('aaPincodeNote').style.display='none';">
+        <div id="aaPincodeNote" style="display:none;color:#b30000;font-size:12px;margin-top:4px;">Could not reliably detect the pincode for this location. Please enter or confirm it manually.</div>
+      </div>
+      <div class="mb-3">
+        <label style="font-size:12px;font-weight:600;color:#555;">Locality / Area *</label>
+        <input type="text" name="locality" id="aaLocality" class="form-control" placeholder="Enter your locality" required style="font-size:13px;">
+      </div>
+      <div class="mb-3">
+        <label style="font-size:12px;font-weight:600;color:#555;">Address (House No, Building, Street) *</label>
+        <textarea name="address" id="aaAddress" class="form-control" rows="2" placeholder="Enter your address" required style="font-size:13px;"></textarea>
+      </div>
+      <div id="aaLocWarn" style="display:none;background:#FFF7E0;border:1px solid #FFD77A;color:#7a5b00;font-size:12px;padding:8px 10px;border-radius:8px;margin-bottom:12px;">⚠️ Location-based address is approximately 50% accurate. Please manually check and confirm your address before saving.</div>
+      <div class="mb-3">
+        <label style="font-size:12px;font-weight:600;color:#555;">Landmark <span style="color:#999;font-weight:400;">(optional)</span></label>
+        <input type="text" name="landmark" id="aaLandmark" class="form-control" placeholder="E.g. near park, opposite to school" style="font-size:13px;">
+      </div>
+      <div class="mb-3">
+        <label style="font-size:12px;font-weight:600;color:#555;">Phone *</label>
+        <input type="tel" name="phone" id="aaPhone" class="form-control" placeholder="10-digit mobile number" maxlength="10" inputmode="numeric" required style="font-size:13px;" oninput="this.value=this.value.replace(/\D/g,'')">
+      </div>
+      <p id="aaMsg" style="font-size:12px;margin:0 0 10px;display:none;"></p>
+      <button type="submit" id="aaSubmit" class="btn btn-primary w-100" style="background:#3C3489;border:none;border-radius:10px;font-size:14px;font-weight:700;padding:12px;">
+        <i class="fa fa-save me-1"></i> Save Address
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+const profileCsrf = '{{ csrf_token }}';
+
+function parseFetchResponse(r) {
+  return r.text().then(function(t) {
+    var d;
+    try { d = JSON.parse(t); } catch (e) { d = {}; }
+    if (!r.ok && !d.error) {
+      d.error = 'Server error (' + r.status + '). Please try again or refresh the page.';
+    }
+    return { ok: r.ok, d: d };
+  });
+}
+
+function profileAddrItemHtml(a) {
+  return '<div class="saved-addr-item" style="display:flex;align-items:flex-start;gap:12px;border:1px solid #ece9e1;border-radius:12px;padding:12px 14px;margin-bottom:10px;background:#faf9fd;">' +
+    '<div style="flex:1;font-size:13px;">' +
+      '<strong style="color:#3C3489;">' + a.label + '</strong>' +
+      '<div style="color:#555;margin-top:2px;">' + a.address + (a.locality ? ', ' + a.locality : '') + (a.landmark ? ', ' + a.landmark : '') + ' - ' + a.pincode + '</div>' +
+      (a.phone ? '<div style="color:#888;font-size:12px;margin-top:2px;"><i class="fa fa-phone me-1"></i>' + a.phone + '</div>' : '') +
+    '</div>' +
+    '<button type="button" class="delete-addr-btn" data-id="' + a.id + '" title="Delete" style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:14px;flex:none;padding:4px;"><i class="fa fa-trash"></i></button>' +
+  '</div>';
+}
+
+/* Add Address modal */
+const addAddressModal = document.getElementById('addAddressModal');
+document.getElementById('addAddressBtn').addEventListener('click', function() {
+  document.getElementById('aaMsg').style.display = 'none';
+  document.getElementById('aaLocStatus').style.display = 'none';
+  document.getElementById('aaLocWarn').style.display = 'none';
+  document.getElementById('aaMapWrap').style.display = 'none';
+  document.getElementById('addAddressForm').reset();
+  document.getElementById('aaLatitude').value = '';
+  document.getElementById('aaLongitude').value = '';
+  addAddressModal.style.display = 'flex';
+});
+document.getElementById('addAddrClose').addEventListener('click', function() { addAddressModal.style.display = 'none'; });
+addAddressModal.addEventListener('click', function(e) {
+  if (e.target === addAddressModal) addAddressModal.style.display = 'none';
+});
+
+/* Use Current Location in Add Address modal */
+const aaUseLocationBtn = document.getElementById('aaUseLocationBtn');
+const aaLocStatus = document.getElementById('aaLocStatus');
+function aaSetStatus(msg) {
+  aaLocStatus.textContent = msg;
+  aaLocStatus.style.display = 'inline-block';
+  if (msg.indexOf('Getting your location') === 0 || msg.indexOf('Getting a more accurate location') === 0) {
+    aaLocStatus.style.background = '#E7F6E7';
+    aaLocStatus.style.border = '1px solid #BFE8BF';
+    aaLocStatus.style.color = '#145214';
+  } else {
+    aaLocStatus.style.background = '#FCEBEB';
+    aaLocStatus.style.border = '1px solid #F7C1C1';
+    aaLocStatus.style.color = '#791F1F';
+  }
+}
+aaUseLocationBtn.addEventListener('click', function() {
+  if (!navigator.geolocation) {
+    aaSetStatus('Geolocation is not supported by this browser.');
+    return;
+  }
+  aaUseLocationBtn.disabled = true;
+  aaAcquireBestLocation(function(best) {
+    aaUseLocationBtn.disabled = false;
+    document.getElementById('aaLatitude').value = best.lat.toFixed(6);
+    document.getElementById('aaLongitude').value = best.lng.toFixed(6);
+    aaShowMap(best.lat, best.lng);
+    aaReverseGeocode(best.lat, best.lng, Math.round(best.accuracy));
+  }, function(msg) {
+    aaUseLocationBtn.disabled = false;
+    aaSetStatus(msg);
+  });
+});
+
+/* ── Multi-reading GPS: keep watching, keep the most accurate fix ── */
+const AA_GOOD_ACCURACY = 50;        /* metres */
+const AA_ACCEPTABLE_ACCURACY = 100; /* metres */
+const AA_MAX_LOCATION_WAIT = 20000; /* ms */
+
+function aaAcquireBestLocation(onResult, onFailure) {
+  let best = null;
+  let watcherId = null;
+  let finished = false;
+  let settleTimer = null;
+
+  function classify(acc) {
+    if (acc <= AA_GOOD_ACCURACY) return 'good';
+    if (acc <= AA_ACCEPTABLE_ACCURACY) return 'acceptable';
+    return 'poor';
+  }
+
+  function finalize() {
+    if (finished) return;
+    finished = true;
+    if (settleTimer) clearTimeout(settleTimer);
+    if (watcherId !== null) navigator.geolocation.clearWatch(watcherId);
+    if (best) onResult(best);
+    else onFailure('Could not get your location. Please try again or enter your address manually.');
+  }
+
+  function handlePosition(position) {
+    const lat = position.coords.latitude;
+    const lng = position.coords.longitude;
+    const accuracy = position.coords.accuracy;
+
+    /* Never replace a good fix with an equal-or-worse one. */
+    if (best && accuracy >= best.accuracy) {
+      if (classify(best.accuracy) === 'poor') {
+        aaSetStatus('Getting a more accurate location... (best so far: ±' + Math.round(best.accuracy) + ' m)');
+      }
+      return;
+    }
+
+    best = { lat: lat, lng: lng, accuracy: accuracy };
+    const cls = classify(accuracy);
+    if (cls === 'good') { finalize(); return; }
+    if (cls === 'acceptable') {
+      aaSetStatus('Location found (±' + Math.round(accuracy) + ' m). Trying to refine it a bit more...');
+      if (settleTimer) clearTimeout(settleTimer);
+      settleTimer = setTimeout(finalize, 3500);
+      return;
+    }
+    aaSetStatus('Getting a more accurate location... (best so far: ±' + Math.round(accuracy) + ' m)');
+  }
+
+  function handleGeoError(error) {
+    if (error.code === error.PERMISSION_DENIED) {
+      if (!finished) {
+        finished = true;
+        if (settleTimer) clearTimeout(settleTimer);
+        if (watcherId !== null) navigator.geolocation.clearWatch(watcherId);
+        onFailure('Location permission denied. Please allow location access in your browser settings and try again.');
+      }
+      return;
+    }
+    if (best) {
+      aaSetStatus('Getting a more accurate location... (best so far: ±' + Math.round(best.accuracy) + ' m)');
+      return;
+    }
+    if (error.code === error.TIMEOUT) {
+      aaSetStatus('Getting your location... (still searching)');
+      return;
+    }
+    aaSetStatus('Location unavailable. Make sure GPS/location services are turned on, then try again.');
+  }
+
+  aaSetStatus('Getting your location...');
+  watcherId = navigator.geolocation.watchPosition(handlePosition, handleGeoError, {
+    enableHighAccuracy: true,
+    maximumAge: 0,
+    timeout: 15000
+  });
+  setTimeout(finalize, AA_MAX_LOCATION_WAIT);
+}
+
+/* ── Map preview with a draggable marker to correct a slightly off pin ── */
+let aaMap = null;
+let aaMarker = null;
+
+function aaLoadLeaflet(callback) {
+  if (window.L) { callback(); return; }
+  const s = document.createElement('script');
+  s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+  s.onload = callback;
+  s.onerror = function() {
+    aaSetStatus('Unable to load the map. You can still enter your address manually.');
+  };
+  document.head.appendChild(s);
+}
+
+function aaShowMap(lat, lng) {
+  aaLoadLeaflet(function() {
+    const wrap = document.getElementById('aaMapWrap');
+    const mapDiv = document.getElementById('aaMap');
+    wrap.style.display = 'block';
+    if (aaMap) { aaMap.remove(); aaMap = null; }
+    aaMap = L.map(mapDiv, { scrollWheelZoom: false }).setView([lat, lng], 16);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(aaMap);
+    aaMarker = L.marker([lat, lng], { draggable: true }).addTo(aaMap);
+    aaMap.on('click', function(e) {
+      aaMarker.setLatLng(e.latlng);
+      aaOnMarkerMoved(e.latlng.lat, e.latlng.lng);
+    });
+    aaMarker.on('dragend', function() {
+      const p = aaMarker.getLatLng();
+      aaOnMarkerMoved(p.lat, p.lng);
+    });
+    setTimeout(function() { aaMap.invalidateSize(); }, 150);
+  });
+}
+
+function aaOnMarkerMoved(lat, lng) {
+  document.getElementById('aaLatitude').value = lat.toFixed(6);
+  document.getElementById('aaLongitude').value = lng.toFixed(6);
+  aaSetStatus('Marker moved - updating the address from the new pin...');
+  aaReverseGeocode(lat, lng, 0);
+}
+
+function aaReverseGeocode(lat, lng, accuracy) {
+  fetch('{% url "reverse_geocode" %}?lat=' + lat + '&lng=' + lng + '&accuracy=' + accuracy, {
+    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+  })
+  .then(r => r.json())
+  .then(function(data) {
+    if (data.error) {
+      aaSetStatus('Could not detect your address - please enter it manually.');
+      return;
+    }
+    document.getElementById('aaLocWarn').style.display = 'block';
+    var aaPinEl = document.getElementById('aaPincode');
+    var aaPinNote = document.getElementById('aaPincodeNote');
+    if (data.pincode) {
+      aaPinEl.value = data.pincode;
+      aaPinNote.style.display = 'none';
+    } else if (!aaPinEl.value.trim()) {
+      aaPinNote.style.display = 'block';
+    }
+    if (data.locality) document.getElementById('aaLocality').value = data.locality;
+    if (data.address && !document.getElementById('aaAddress').value.trim()) {
+      document.getElementById('aaAddress').value = data.address;
+    }
+    if (data.landmark && !document.getElementById('aaLandmark').value.trim()) {
+      document.getElementById('aaLandmark').value = data.landmark;
+    }
+    if (accuracy > 0) {
+      let note;
+      if (accuracy <= AA_GOOD_ACCURACY) {
+        note = '±' + accuracy + ' m accuracy. GPS is approximate - please verify the address before saving.';
+      } else if (accuracy <= AA_ACCEPTABLE_ACCURACY) {
+        note = '±' + accuracy + ' m accuracy (approximate). Move the marker or edit the address if needed.';
+      } else {
+        note = '±' + accuracy + ' m accuracy (approximate, may be off). Move the marker to correct, or enter the address manually.';
+      }
+      if (!data.pincode) note += ' Pincode not found for this spot - please enter it manually.';
+      aaSetStatus(note);
+    } else {
+      aaSetStatus('Address updated from the marker. Please verify it before saving.');
+    }
+  })
+  .catch(function() {
+    aaSetStatus('Could not detect your address - please enter it manually.');
+  });
+}
+
+document.getElementById('addAddressForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const msg = document.getElementById('aaMsg');
+  const submitBtn = document.getElementById('aaSubmit');
+  const pincode = document.getElementById('aaPincode').value.trim();
+  const locality = document.getElementById('aaLocality').value.trim();
+  const address = document.getElementById('aaAddress').value.trim();
+  const phone = document.getElementById('aaPhone').value.trim();
+  const missing = [];
+  if (!pincode) missing.push('Pincode');
+  if (!locality) missing.push('Locality / Area');
+  if (!address) missing.push('Address');
+  if (!phone) missing.push('Phone');
+  if (missing.length) {
+    msg.style.color = '#dc3545';
+    msg.textContent = 'Please fill in: ' + missing.join(', ');
+    msg.style.display = 'block';
+    return;
+  }
+  if (phone.replace(/\D/g, '').length !== 10) {
+    msg.style.color = '#dc3545';
+    msg.textContent = 'Enter a valid 10-digit phone number.';
+    msg.style.display = 'block';
+    return;
+  }
+  submitBtn.disabled = true;
+  fetch("{% url 'add_address' %}", {
+    method: 'POST',
+    headers: { 'X-CSRFToken': profileCsrf },
+    body: new URLSearchParams({
+      label: document.getElementById('aaLabel').value.trim(),
+      pincode: pincode,
+      locality: document.getElementById('aaLocality').value.trim(),
+      address: address,
+      landmark: document.getElementById('aaLandmark').value.trim(),
+      phone: document.getElementById('aaPhone').value.trim(),
+      latitude: document.getElementById('aaLatitude').value,
+      longitude: document.getElementById('aaLongitude').value
+    })
+  })
+  .then(parseFetchResponse)
+  .then(function({ ok, d }) {
+    submitBtn.disabled = false;
+    if (!ok || d.error) {
+      msg.style.color = '#dc3545';
+      msg.textContent = d.error || 'Failed to save address.';
+      msg.style.display = 'block';
+      return;
+    }
+    msg.style.display = 'none';
+    addAddressModal.style.display = 'none';
+    location.reload();
+  })
+  .catch(function() {
+    submitBtn.disabled = false;
+    msg.style.color = '#dc3545';
+    msg.textContent = 'Network error. Please try again.';
+    msg.style.display = 'block';
+  });
+});
+
+/* Delete existing saved addresses */
+document.querySelectorAll('#profile-address-list .delete-addr-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    premiumConfirm({
+      title: 'Delete Saved Address?',
+      message: 'This saved address will be removed from your account. This action cannot be undone.',
+      confirmText: 'Delete',
+      confirmIcon: 'fa-trash'
+    }).then(function(ok) {
+      if (!ok) return;
+      fetch("{% url 'delete_address' %}", {
+        method: 'POST',
+        headers: { 'X-CSRFToken': profileCsrf },
+        body: new URLSearchParams({ address_id: btn.dataset.id })
+      })
+      .then(parseFetchResponse)
+      .then(function({ ok, d }) {
+        if (!ok || d.error) { premiumAlert(d.error || 'Failed to delete address.', { title: 'Delete Failed', confirmIcon: 'fa-exclamation-circle' }); return; }
+        btn.closest('.saved-addr-item').remove();
+        if (!document.querySelector('#profile-address-list .saved-addr-item')) {
+          location.reload();
+        }
+      })
+      .catch(function() { premiumAlert('Network error. Please try again.', { title: 'Network Error', confirmIcon: 'fa-exclamation-circle' }); });
+    });
+  });
+});
+</script>
+{% endblock %}

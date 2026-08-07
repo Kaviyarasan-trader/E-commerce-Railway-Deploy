@@ -1,0 +1,165 @@
+{% extends 'shop/layouts/main.html' %}
+{% load static %}
+{% block title %}Edit Profile | KaviBazaar{% endblock %}
+
+{% block content %}
+<style>
+  .profile-section {
+    background: linear-gradient(180deg, #f6f4ff 0%, #faf9f6 100%);
+    min-height: 600px;
+    padding: 48px 0 64px;
+  }
+  .section-eyebrow {
+    font-size: 11px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: #8b84c8;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .section-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #1a1a1a;
+    letter-spacing: -0.02em;
+    margin-bottom: 12px;
+  }
+  .section-underline {
+    width: 56px; height: 4px;
+    background: linear-gradient(90deg, #3C3489, #FAC775);
+    border-radius: 4px;
+    margin-bottom: 24px;
+  }
+  .profile-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: 0 10px 30px rgba(60,52,137,.07);
+    border: 1px solid rgba(60,52,137,.05);
+    position: relative;
+    overflow: hidden;
+  }
+  .profile-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #3C3489, #6B5BD6, #FAC775);
+  }
+  .avatar-circle {
+    width: 84px; height: 84px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3C3489, #6B5BD6);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 34px;
+    font-weight: 800;
+    font-family: Georgia, serif;
+    margin: 0 auto 24px;
+    box-shadow: 0 8px 20px rgba(60,52,137,.3);
+  }
+  .form-label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: #999;
+    margin-bottom: 6px;
+  }
+  .form-input {
+    width: 100%;
+    border: 1px solid #e2deef;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 14px;
+    color: #1a1a1a;
+    background: #faf9fd;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .form-input:focus {
+    border-color: #3C3489;
+    box-shadow: 0 0 0 3px rgba(60,52,137,.12);
+    background: #fff;
+  }
+  .btn-primary-profile {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: linear-gradient(135deg, #3C3489, #6B5BD6);
+    color: #fff;
+    border: none;
+    border-radius: 30px;
+    padding: 12px 26px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .12s, box-shadow .15s;
+  }
+  .btn-primary-profile:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(60,52,137,.3); }
+  .btn-ghost {
+    display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid #d8d4e8;
+    border-radius: 30px;
+    padding: 12px 26px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #3C3489;
+    text-decoration: none;
+    transition: all .15s;
+  }
+  .btn-ghost:hover { background: #f4f3fb; border-color: #3C3489; color: #3C3489; text-decoration: none; }
+  .form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 24px;
+  }
+</style>
+
+<section class="profile-section">
+  <div class="container">
+    <div class="row">
+      <div class="col-12">
+        <div class="section-eyebrow">KaviBazaar</div>
+        <h1 class="section-title">Edit Profile</h1>
+        <div class="section-underline"></div>
+        {% include 'shop/inc/message.html' %}
+      </div>
+
+      <div class="col-lg-6 mx-auto">
+        <div class="profile-card">
+          <div class="avatar-circle">{{ request.user.first_name|default:request.user.username|slice:":1"|upper }}</div>
+
+          <form method="POST" action="{% url 'edit_profile' %}">
+            {% csrf_token %}
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="form-label">First Name</div>
+                <input type="text" name="first_name" class="form-input" required
+                       value="{{ request.user.first_name|default:'' }}" placeholder="First name">
+              </div>
+              <div class="col-md-6">
+                <div class="form-label">Last Name</div>
+                <input type="text" name="last_name" class="form-input" required
+                       value="{{ request.user.last_name|default:'' }}" placeholder="Last name">
+              </div>
+              <div class="col-12">
+                <div class="form-label">Mobile Number</div>
+                <input type="tel" name="phone" class="form-input" required maxlength="10"
+                       value="{{ profile.mobile_number|default:'' }}" placeholder="10-digit mobile number">
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-primary-profile"><i class="fa fa-save"></i> Save Changes</button>
+              <a href="{% url 'profile' %}" class="btn-ghost"><i class="fa fa-arrow-left"></i> Back to Profile</a>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+{% endblock %}

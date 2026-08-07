@@ -1,0 +1,48 @@
+#content {
+  padding-bottom: 90px;
+}
+
+.submit-row {
+  margin-top: 28px;
+  padding: 16px 18px;
+}
+
+.module.submit-row {
+  border-top: 1px solid #eee;
+}
+
+#changelist .dataTables_info {
+  margin-top: 18px;
+  padding: 12px 4px;
+}
+
+#changelist input[name="_save"] {
+  margin-left: 14px;
+}
+
+@media (max-width: 767px) {
+  .submit-row {
+    margin-top: 20px;
+    padding: 14px 12px;
+  }
+  #content {
+    padding-bottom: 70px;
+  }
+}
+
+/* ── Mobile header: keep jazzmin top menu links (Home, KaviBazaar Admin) visible ── */
+@media (max-width: 575.98px) {
+  .app-header .navbar-nav > li.nav-item.d-none.d-sm-inline-block {
+    display: inline-flex !important;
+    align-items: center;
+  }
+  .app-header .navbar-nav > li.nav-item.d-none.d-sm-inline-block > .nav-link {
+    padding: 0.45rem 0.55rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+  /* Hide the per-model search boxes on small screens so the menu links fit */
+  .app-header form.d-flex.ms-2 {
+    display: none !important;
+  }
+}

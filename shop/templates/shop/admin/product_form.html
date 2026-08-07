@@ -1,0 +1,404 @@
+{% extends 'shop/admin/base.html' %}
+{% block title %}{% if product %}Edit Product{% else %}Add Product{% endif %}{% endblock %}
+{% block page_title %}{% if product %}Edit Product{% else %}Add Product{% endif %}{% endblock %}
+{% block content %}
+
+<style>
+  .gallery-thumb {
+    position: relative;
+    border: 1px solid rgba(245,199,111,.25);
+    border-radius: 10px;
+    padding: 5px;
+    background: rgba(245,199,111,.05);
+  }
+  .gallery-thumb img {
+    height: 64px;
+    border-radius: 6px;
+    display: block;
+  }
+  .thumb-del {
+    position: absolute;
+    top: -9px;
+    right: -9px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #dc3545;
+    color: #fff;
+    font-size: 16px;
+    line-height: 22px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform .12s, box-shadow .12s;
+    box-shadow: 0 2px 6px rgba(220,53,69,.4);
+  }
+  .thumb-del:hover { transform: scale(1.12); }
+  .gallery-thumb input:checked ~ .thumb-del {
+    background: #198754;
+    box-shadow: 0 2px 6px rgba(25,135,84,.4);
+  }
+  .gallery-thumb input:checked + .thumb-del::after {
+    content: "✓";
+    font-size: 13px;
+  }
+  .gallery-thumb input:checked + .thumb-del { font-size: 0; line-height: 24px; }
+  .drop-zone {
+    border: 2px dashed #6B5BD6;
+    border-radius: 12px;
+    padding: 18px 12px;
+    text-align: center;
+    color: #c9c4ea;
+    cursor: pointer;
+    transition: all .15s;
+    background: rgba(60,52,137,.06);
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: #FAC775;
+    background: rgba(245,199,111,.08);
+  }
+  .drop-zone i { font-size: 22px; display: block; margin-bottom: 6px; }
+  .drop-zone p { margin: 0; font-size: 13px; color: #e9e6f8; }
+  .drop-zone .drop-hint { font-size: 11px; color: #8f86bd; display: block; margin-top: 6px; }
+  .category-option { padding: 6px 10px; cursor: pointer; font-size: 13px; color: #e9e6f8; }
+  .category-option:hover { background: rgba(245,199,111,.12); }
+  .category-option.selected { background: rgba(245,199,111,.2); color: #F5C76F; font-weight: 600; }
+</style>
+
+<div class="card-custom" style="max-width:700px;">
+  <div class="card-body">
+    <form method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label>Product Name</label>
+          <input type="text" name="name" class="form-control form-control-sm-custom w-100" required
+                 value="{{ product.name|default:'' }}">
+        </div>
+        <div class="col-md-6">
+          <label>Vendor / Brand</label>
+          <input type="text" name="vendor" class="form-control form-control-sm-custom w-100" required
+                 value="{{ product.vendor|default:'' }}">
+        </div>
+      </div>
+
+      <div class="mt-3">
+        <label>Category</label>
+        <div class="position-relative">
+          <input type="text" id="categorySearch" class="form-control form-control-sm-custom w-100"
+                 placeholder="Search category…" autocomplete="off">
+          <input type="hidden" name="category" id="categoryValue" value="{{ product.category.id|default:'' }}">
+          <div id="categoryDropdown" class="mt-1"
+               style="max-height:160px;overflow:auto;border:1px solid rgba(245,199,111,.2);border-radius:8px;display:none;background:#17112f;">
+            <div id="categoryList">
+              {% for cat in categories %}
+              <div class="category-option" data-id="{{ cat.id }}" data-name="{{ cat.name|escapejs }}">{{ cat.name }}</div>
+              {% endfor %}
+            </div>
+            <div id="categoryEmpty" class="p-2" style="display:none;color:#8f86bd;font-size:12px;">No matching category</div>
+          </div>
+          <div id="categorySelected" class="mt-1" style="font-size:12px;color:#F5C76F;">
+            {% if product %}{{ product.category.name }}{% else %}No category selected{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3 mt-2">
+        <div class="col-md-4">
+          <label>Quantity (Stock)</label>
+          <input type="number" name="quantity" class="form-control form-control-sm-custom w-100" required min="0"
+                 value="{{ product.quantity|default:'0' }}">
+        </div>
+        <div class="col-md-4">
+          <label>Original Price</label>
+          <input type="number" name="original_price" class="form-control form-control-sm-custom w-100" required min="0" step="0.01"
+                 value="{{ product.original_price|default:'0' }}">
+        </div>
+        <div class="col-md-4">
+          <label>Selling Price</label>
+          <input type="number" name="selling_price" class="form-control form-control-sm-custom w-100" required min="0" step="0.01"
+                 value="{{ product.selling_price|default:'0' }}">
+        </div>
+      </div>
+
+      <div class="mt-3">
+        <label>Description</label>
+        <textarea name="description" rows="3" class="form-control form-control-sm-custom w-100" required>{{ product.description|default:'' }}</textarea>
+      </div>
+
+      <div class="card-custom mt-4" style="border:1px solid rgba(245,199,111,.18);box-shadow:none;background:rgba(23,17,47,.5)!important;">
+        <div class="card-body">
+          <h6 style="color:#F5C76F;font-weight:700;margin-bottom:12px;"><i class="fa fa-check-circle"></i> Highlights &amp; Perks</h6>
+
+          <div class="mb-1"><label style="margin-bottom:4px;">Highlight 1</label>
+            <input type="text" name="highlight_1" class="form-control form-control-sm-custom w-100" value="{{ product.highlight_1|default:'' }}"></div>
+          <div class="mb-1"><label style="margin-bottom:4px;">Highlight 2</label>
+            <input type="text" name="highlight_2" class="form-control form-control-sm-custom w-100" value="{{ product.highlight_2|default:'' }}"></div>
+          <div class="mb-3"><label style="margin-bottom:4px;">Highlight 3</label>
+            <input type="text" name="highlight_3" class="form-control form-control-sm-custom w-100" value="{{ product.highlight_3|default:'' }}"></div>
+
+          <div class="row g-2">
+            <div class="col-md-4">
+              <label style="margin-bottom:4px;">Perk 1 Title</label>
+              <input type="text" name="perk_1_title" class="form-control form-control-sm-custom w-100" value="{{ product.perk_1_title|default:'Free delivery' }}">
+              <label style="margin:8px 0 4px;">Perk 1 Sub</label>
+              <input type="text" name="perk_1_sub" class="form-control form-control-sm-custom w-100" value="{{ product.perk_1_sub|default:'2–4 business days' }}">
+            </div>
+            <div class="col-md-4">
+              <label style="margin-bottom:4px;">Perk 2 Title</label>
+              <input type="text" name="perk_2_title" class="form-control form-control-sm-custom w-100" value="{{ product.perk_2_title|default:'7-day returns' }}">
+              <label style="margin:8px 0 4px;">Perk 2 Sub</label>
+              <input type="text" name="perk_2_sub" class="form-control form-control-sm-custom w-100" value="{{ product.perk_2_sub|default:'Hassle-free' }}">
+            </div>
+            <div class="col-md-4">
+              <label style="margin-bottom:4px;">Perk 3 Title</label>
+              <input type="text" name="perk_3_title" class="form-control form-control-sm-custom w-100" value="{{ product.perk_3_title|default:'Secure payment' }}">
+              <label style="margin:8px 0 4px;">Perk 3 Sub</label>
+              <input type="text" name="perk_3_sub" class="form-control form-control-sm-custom w-100" value="{{ product.perk_3_sub|default:'100% protected' }}">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3 mt-2">
+        <div class="col-md-6">
+          <label>Product Image (Cover)</label>
+          <input type="file" name="product_image" class="form-control form-control-sm-custom w-100"
+                 {% if not product %}required{% endif %}>
+          {% if product and product.product_image %}
+          <div class="mt-2">
+            <img src="{{ product.product_image.url }}" style="height:60px;border-radius:8px;" alt="">
+            <span style="font-size:11px;color:#8f86bd;margin-left:6px;">(leave empty to keep current)</span>
+            <div class="form-check mt-1" style="font-size:12px;">
+              <input type="checkbox" class="form-check-input" name="delete_cover" id="delCover">
+              <label class="form-check-label" for="delCover" style="color:#ff8b8b;">Remove cover image</label>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+        <div class="col-md-6">
+          <label>More Images (Gallery) — upload multiple at once</label>
+          <div id="dropZone" class="drop-zone" title="Click to browse">
+            <i class="fa fa-cloud-upload-alt"></i>
+            <p>Drop images here, or <strong>click to browse</strong></p>
+            <span class="drop-hint">In the picker, hold Ctrl (or Shift) and click several files, then Open.</span>
+            <input type="file" name="extra_images" id="extraImages" multiple accept="image/*" class="d-none">
+          </div>
+          <div class="mt-2 d-flex gap-2 align-items-center flex-wrap">
+            <button type="button" id="btnAddMore" class="btn btn-outline-light btn-sm" style="border-radius:8px;font-size:12px;">
+              <i class="fa fa-plus"></i> Add more images
+            </button>
+            <span style="font-size:11px;color:#8f86bd;">Picks more files and adds them to your selection.</span>
+          </div>
+          <input type="file" id="extraMore" accept="image/*" style="display:none;">
+          <div id="extraPreview" class="d-flex flex-wrap" style="gap:10px;margin-top:10px;"></div>
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+          <div class="form-check">
+            <input type="checkbox" name="status" id="status" class="form-check-input"
+                   {% if not product or product.status == 0 %}checked{% endif %}>
+            <label class="form-check-label" for="status" style="font-size:13px;">Visible</label>
+          </div>
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+          <div class="form-check">
+            <input type="checkbox" name="trending" id="trending" class="form-check-input"
+                   {% if product and product.trending %}checked{% endif %}>
+            <label class="form-check-label" for="trending" style="font-size:13px;">Trending</label>
+          </div>
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+          <div>
+            <label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px;">Cash on Delivery</label>
+            <div class="form-check form-check-inline" style="margin-right:14px;">
+              <input type="radio" name="cash_on_delivery" id="codYes" value="on" class="form-check-input" required
+                     {% if not product or product.cash_on_delivery %}checked{% endif %}>
+              <label class="form-check-label" for="codYes" style="font-size:13px;">Yes</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input type="radio" name="cash_on_delivery" id="codNo" value="off" class="form-check-input" required
+                     {% if product and not product.cash_on_delivery %}checked{% endif %}>
+              <label class="form-check-label" for="codNo" style="font-size:13px;">No</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {% if product and product.images.all %}
+      <div class="mt-3">
+        <label style="margin-bottom:6px;">Current Gallery Images (click × to remove)</label>
+        <div class="d-flex flex-wrap" style="gap:10px;">
+          {% for img in product.images.all %}
+          <div class="gallery-thumb">
+            <img src="{{ img.image.url }}" alt="">
+            <input type="checkbox" class="d-none" name="delete_image_{{ img.id }}" id="delimg{{ img.id }}">
+            <label class="thumb-del" for="delimg{{ img.id }}" title="Remove this image">×</label>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="mt-4 d-flex gap-2">
+        <button type="submit" class="btn btn-dark btn-sm" style="border-radius:8px;">
+          <i class="fa fa-save"></i> {% if product %}Update{% else %}Save{% endif %}
+        </button>
+        <a href="{% url 'admin_products' %}" class="btn btn-outline-secondary btn-sm" style="border-radius:8px;">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function () {
+  var search = document.getElementById("categorySearch");
+  var hidden = document.getElementById("categoryValue");
+  var dropdown = document.getElementById("categoryDropdown");
+  var empty = document.getElementById("categoryEmpty");
+  var selected = document.getElementById("categorySelected");
+  if (!search || !hidden || !dropdown || !selected) return;
+
+  var options = Array.prototype.map.call(document.querySelectorAll(".category-option"), function (o) {
+    return { id: o.getAttribute("data-id"), name: o.getAttribute("data-name"), el: o };
+  });
+
+  function filter() {
+    var q = search.value.trim().toLowerCase();
+    return q ? options.filter(function (o) { return o.name.toLowerCase().indexOf(q) !== -1; }) : options;
+  }
+
+  function render(list) {
+    options.forEach(function (o) { o.el.style.display = "none"; });
+    list.forEach(function (o) { o.el.style.display = "block"; });
+    empty.style.display = list.length ? "none" : "block";
+    dropdown.style.display = "block";
+  }
+
+  function select(o) {
+    hidden.value = o.id;
+    search.value = o.name;
+    selected.textContent = "Selected: " + o.name;
+    selected.style.color = "#F5C76F";
+    search.style.borderColor = "";
+    dropdown.style.display = "none";
+    options.forEach(function (x) { x.el.classList.toggle("selected", x === o); });
+  }
+
+  options.forEach(function (o) {
+    o.el.addEventListener("click", function () { select(o); });
+  });
+
+  search.addEventListener("focus", function () { render(filter()); });
+  search.addEventListener("input", function () { render(filter()); });
+  search.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+      var list = filter();
+      if (list.length) { e.preventDefault(); select(list[0]); }
+    }
+  });
+
+  document.addEventListener("click", function (e) {
+    if (!dropdown.contains(e.target) && e.target !== search) dropdown.style.display = "none";
+  });
+
+  if (hidden.value) {
+    options.forEach(function (o) {
+      if (o.id === hidden.value) {
+        search.value = o.name;
+        o.el.classList.add("selected");
+      }
+    });
+  }
+
+  var form = search.closest("form");
+  form.addEventListener("submit", function (e) {
+    if (!hidden.value) {
+      e.preventDefault();
+      search.style.borderColor = "#dc3545";
+      selected.textContent = "Please select a category";
+      selected.style.color = "#ff8b8b";
+      render(options);
+      search.focus();
+    }
+  });
+})();
+
+(function () {
+  var input = document.getElementById("extraImages");
+  var preview = document.getElementById("extraPreview");
+  if (!input || !preview) return;
+
+  function renderPreview() {
+    preview.innerHTML = "";
+    Array.prototype.forEach.call(input.files, function (file, index) {
+      var url = URL.createObjectURL(file);
+      var box = document.createElement("div");
+      box.style.cssText = "position:relative;border:1px solid rgba(245,199,111,.25);border-radius:10px;padding:5px;background:rgba(245,199,111,.05);";
+      var img = document.createElement("img");
+      img.src = url;
+      img.style.cssText = "height:64px;border-radius:6px;display:block;";
+      var rm = document.createElement("button");
+      rm.type = "button";
+      rm.title = "Remove from selection";
+      rm.innerHTML = "&times;";
+      rm.style.cssText = "position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;border:none;background:#dc3545;color:#fff;font-size:14px;line-height:1;cursor:pointer;";
+      rm.addEventListener("click", function () {
+        var dt = new DataTransfer();
+        Array.prototype.forEach.call(input.files, function (f, i) {
+          if (i !== index) dt.items.add(f);
+        });
+        input.files = dt.files;
+        renderPreview();
+      });
+      box.appendChild(img);
+      box.appendChild(rm);
+      preview.appendChild(box);
+    });
+  }
+
+  function appendFiles(fileList) {
+    var dt = new DataTransfer();
+    Array.prototype.forEach.call(input.files, function (f) { dt.items.add(f); });
+    Array.prototype.forEach.call(fileList, function (f) { dt.items.add(f); });
+    input.files = dt.files;
+    renderPreview();
+  }
+
+  input.addEventListener("change", renderPreview);
+
+  var zone = document.getElementById("dropZone");
+  if (zone) {
+    ["dragenter", "dragover"].forEach(function (ev) {
+      zone.addEventListener(ev, function (e) {
+        e.preventDefault();
+        zone.classList.add("dragover");
+      });
+    });
+    ["dragleave", "drop"].forEach(function (ev) {
+      zone.addEventListener(ev, function (e) {
+        e.preventDefault();
+        zone.classList.remove("dragover");
+      });
+    });
+    zone.addEventListener("drop", function (e) {
+      var files = Array.prototype.filter.call(e.dataTransfer.files, function (f) {
+        return f.type.indexOf("image/") === 0;
+      });
+      if (files.length) appendFiles(files);
+    });
+    zone.addEventListener("click", function () { input.click(); });
+  }
+
+  var btnAddMore = document.getElementById("btnAddMore");
+  var more = document.getElementById("extraMore");
+  if (btnAddMore && more) {
+    btnAddMore.addEventListener("click", function () { more.click(); });
+    more.addEventListener("change", function () {
+      appendFiles(more.files);
+      more.value = "";
+    });
+  }
+})();
+</script>
+
+{% endblock %}

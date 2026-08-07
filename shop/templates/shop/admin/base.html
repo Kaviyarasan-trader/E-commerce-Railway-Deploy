@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Admin Dashboard{% endblock %} | KaviBazaar</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0e0a23;
+      margin: 0;
+      min-height: 100vh;
+      color: #e9e6f7;
+      font-variant: small-caps;
+    }
+    input, textarea, select, button { font-variant: normal; }
+    a { color: #F5C76F; }
+
+    /* ── Sidebar (desktop) ── */
+    .sidebar {
+      position: fixed;
+      top: 0; left: 0;
+      width: 230px;
+      height: 100vh;
+      background: linear-gradient(180deg, #0e0a23 0%, #171136 45%, #241a4f 100%);
+      color: #c9c5e6;
+      overflow-y: auto;
+      z-index: 300;
+      border-right: 1px solid rgba(212, 175, 55, 0.18);
+      transition: transform .28s ease;
+    }
+    .sidebar-brand {
+      padding: 22px 20px 16px;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: .5px;
+      border-bottom: 1px solid rgba(212, 175, 55, 0.18);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .sidebar-brand i {
+      width: 34px; height: 34px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #F5C76F, #D4AF37);
+      color: #171136;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .sidebar-brand a {
+      color: #F5C76F;
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .sidebar-nav { padding: 12px 0; }
+    .sidebar-nav a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      color: #b8b1dd;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      border-left: 3px solid transparent;
+      transition: background .15s, color .15s, border-color .15s;
+    }
+    .sidebar-nav a:hover { background: rgba(108, 91, 214, 0.12); color: #fff; }
+    .sidebar-nav a.active {
+      background: rgba(245, 199, 111, 0.08);
+      color: #F5C76F;
+      border-left-color: #F5C76F;
+    }
+    .sidebar-nav a i { width: 20px; text-align: center; }
+    .sidebar-nav hr { border-color: rgba(212, 175, 55, 0.15); margin: 10px 20px; }
+
+    /* ── Mobile top bar + drawer ── */
+    .admin-topbar {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 290;
+      height: 54px;
+      background: linear-gradient(135deg, #0e0a23 0%, #241a4f 100%);
+      border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+      align-items: center;
+      padding: 0 14px;
+      gap: 12px;
+      box-shadow: 0 4px 14px rgba(10, 6, 30, 0.55);
+    }
+    .admin-topbar .hamburger {
+      background: transparent;
+      border: none;
+      color: #F5C76F;
+      font-size: 1.2rem;
+      padding: 6px;
+      line-height: 1;
+    }
+    .admin-topbar .admin-brand-mobile {
+      flex: 1;
+      color: #F5C76F;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-size: 0.95rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .admin-topbar .logout-icon {
+      color: #c9c5e6;
+      font-size: 1.05rem;
+      padding: 6px;
+    }
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(5, 3, 16, 0.6);
+      z-index: 280;
+    }
+    .sidebar-overlay.show { display: block; }
+    @media (max-width: 768px) {
+      .sidebar {
+        width: min(82vw, 300px);
+        transform: translateX(-102%);
+        box-shadow: 6px 0 30px rgba(5, 3, 16, 0.6);
+      }
+      .sidebar.open { transform: translateX(0); }
+      .admin-topbar { display: flex; }
+    }
+
+    /* ── Main content ── */
+    .main-content {
+      margin-left: 230px;
+      padding: 26px 30px;
+      min-height: 100vh;
+    }
+    @media (max-width: 768px) {
+      .main-content { margin-left: 0; padding: 18px 14px; padding-top: 70px; }
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 22px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(212, 175, 55, 0.18);
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .topbar h4 {
+      margin: 0;
+      font-weight: 800;
+      font-size: 20px;
+      color: #F5C76F;
+      letter-spacing: .5px;
+    }
+    .topbar .user-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      color: #a9a2d0;
+    }
+    .topbar .user-info a { color: #F5C76F; text-decoration: none; }
+    .topbar .user-info a:hover { color: #fff; }
+
+    /* ── Cards ── */
+    .stat-card {
+      background: linear-gradient(150deg, #1c1740, #17112f);
+      border: 1px solid rgba(212, 175, 55, 0.18);
+      border-radius: 16px;
+      padding: 18px 22px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 8px 24px rgba(5, 3, 16, 0.4);
+    }
+    .stat-card .icon {
+      width: 46px; height: 46px;
+      background: linear-gradient(135deg, rgba(245, 199, 111, 0.15), rgba(108, 91, 214, 0.18));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #F5C76F;
+    }
+    .stat-card .stat-num {
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1.2;
+      color: #fff;
+    }
+    .stat-card .stat-label {
+      font-size: 11px;
+      color: #a9a2d0;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      font-weight: 600;
+    }
+    .card-custom {
+      background: linear-gradient(150deg, #1c1740, #17112f);
+      border: 1px solid rgba(212, 175, 55, 0.18);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(5, 3, 16, 0.4);
+    }
+    .card-custom .card-header {
+      background: rgba(108, 91, 214, 0.10);
+      border-bottom: 1px solid rgba(212, 175, 55, 0.18);
+      padding: 14px 18px;
+      font-weight: 700;
+      font-size: 14px;
+      color: #F5C76F;
+      letter-spacing: .4px;
+    }
+    .card-custom .card-body { padding: 18px; }
+
+    /* ── Tables (desktop) ── */
+    .table-custom {
+      font-size: 13px;
+      margin: 0;
+      color: #e9e6f7;
+    }
+    .table-custom thead th {
+      border-top: none;
+      border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+      color: #a9a2d0;
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      padding: 12px;
+      background: rgba(14, 10, 35, 0.5);
+    }
+    .table-custom tbody td {
+      padding: 12px;
+      vertical-align: middle;
+      border-color: rgba(212, 175, 55, 0.12);
+      color: #e9e6f7;
+    }
+    .table-custom tbody tr:hover { background: rgba(108, 91, 214, 0.08); }
+    .table-custom a { color: #F5C76F; text-decoration: none; }
+    .table-custom a:hover { color: #fff; }
+
+    /* ── Mobile: table rows become cards ── */
+    @media (max-width: 768px) {
+      .table-custom thead { display: none; }
+      .table-custom, .table-custom tbody, .table-custom tr { display: block; width: 100%; }
+      .table-custom tbody tr {
+        background: #17112f;
+        border: 1px solid rgba(212, 175, 55, 0.18);
+        border-radius: 14px;
+        padding: 10px 14px;
+        margin: 0 0 12px;
+      }
+      .table-custom tbody tr:hover { background: #17112f; }
+      .table-custom tbody td {
+        display: block;
+        border: none;
+        padding: 7px 0;
+      }
+      .table-custom tbody td[data-label] {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
+      .table-custom tbody td[data-label]::before {
+        content: attr(data-label);
+        color: #a9a2d0;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        font-weight: 700;
+        flex: none;
+      }
+      .table-custom tbody td.actions {
+        display: flex;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 8px;
+        border-top: 1px dashed rgba(212, 175, 55, 0.18);
+        margin-top: 6px;
+        padding-top: 10px;
+      }
+      .table-custom tbody tr:last-child { margin-bottom: 0; }
+    }
+    @media (max-width: 480px) {
+      .stat-card { padding: 14px; gap: 12px; }
+      .stat-card .icon { width: 38px; height: 38px; font-size: 15px; }
+      .stat-card .stat-num { font-size: 17px; }
+      .stat-card .stat-label { font-size: 9px; }
+    }
+
+    .badge-status {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 700;
+    }
+    .btn-action {
+      padding: 5px 12px;
+      font-size: 11px;
+      border-radius: 8px;
+      letter-spacing: .03em;
+      font-weight: 600;
+      box-shadow: 0 3px 8px -3px rgba(5, 3, 16, 0.55);
+      transition: transform .15s ease, box-shadow .15s ease, background .15s ease, border-color .15s ease;
+    }
+    .btn-action:hover { transform: translateY(-1px); }
+    .actions .btn-action + .btn-action { margin-left: 9px; }
+    .actions .btn-outline-secondary {
+      background: rgba(245, 199, 111, 0.06);
+      border-color: rgba(245, 199, 111, 0.5);
+    }
+    .actions .btn-outline-secondary:hover {
+      background: linear-gradient(135deg, #F5C76F, #D4AF37);
+      border-color: #F5C76F;
+      color: #171136;
+      box-shadow: 0 6px 16px -6px rgba(245, 199, 111, 0.6);
+    }
+    .actions .btn-outline-danger {
+      background: rgba(220, 53, 69, 0.06);
+      border-color: rgba(220, 53, 69, 0.55);
+    }
+    .actions .btn-outline-danger:hover {
+      background: linear-gradient(135deg, #ff5b6a, #dc3545);
+      border-color: #ff5b6a;
+      color: #fff;
+      box-shadow: 0 6px 16px -6px rgba(220, 53, 69, 0.6);
+    }
+
+    /* ── Buttons ── */
+    .btn-dark {
+      background: linear-gradient(135deg, #6B5BD6, #3C3489);
+      border-color: #6B5BD6;
+      color: #fff;
+      font-weight: 600;
+    }
+    .btn-dark:hover, .btn-dark:focus {
+      background: linear-gradient(135deg, #7d6ede, #453a9c);
+      border-color: #7d6ede;
+      color: #fff;
+    }
+    .btn-outline-secondary {
+      color: #F5C76F;
+      border-color: rgba(245, 199, 111, 0.5);
+      background: transparent;
+    }
+    .btn-outline-secondary:hover {
+      background: #F5C76F;
+      border-color: #F5C76F;
+      color: #171136;
+    }
+    .btn-outline-danger { border-color: rgba(220, 53, 69, 0.6); color: #f28b97; }
+    .btn-outline-danger:hover { background: #dc3545; border-color: #dc3545; color: #fff; }
+    .btn-outline-success { border-color: rgba(25, 135, 84, 0.6); color: #7bd6a5; }
+    .btn-outline-success:hover { background: #198754; border-color: #198754; color: #fff; }
+
+    /* ── Forms ── */
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #a9a2d0;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 6px;
+      display: inline-block;
+    }
+    .form-control-sm-custom {
+      background: #0e0a23;
+      border: 1px solid rgba(212, 175, 55, 0.25);
+      border-radius: 8px;
+      font-size: 13px;
+      padding: 8px 12px;
+      color: #e9e6f7;
+      color-scheme: dark;
+    }
+    .form-control-sm-custom option {
+      background: #0e0a23;
+      color: #e9e6f7;
+    }
+    .form-control-sm-custom:focus {
+      border-color: #F5C76F;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(245, 199, 111, 0.15);
+      color: #e9e6f7;
+      background: #0e0a23;
+    }
+    .form-control-sm-custom::placeholder { color: #6f6799; }
+    .search-clear-x {
+      position: absolute; right: 52px; top: 50%; transform: translateY(-50%);
+      width: 24px; height: 24px; padding: 0; margin: 0;
+      flex: 0 0 auto; box-sizing: border-box;
+      background: transparent; color: #fff; font-size: 18px;
+      cursor: pointer; z-index: 5; user-select: none;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .search-clear-x i { line-height: 1; }
+    .search-clear-x:hover { color: #cfc8ee; }
+    .search-clear-x.hidden { display: none; }
+    .has-clear-x { padding-right: 40px; }
+    .form-check-label { color: #e9e6f7; }
+
+    .page-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; color: #F5C76F; }
+
+    .flash-messages .alert {
+      border-radius: 12px;
+      font-size: 13px;
+      border: 1px solid transparent;
+      background: rgba(14, 10, 35, 0.6);
+      color: #e9e6f7;
+    }
+    .flash-messages .alert-success { border-color: rgba(25, 135, 84, 0.4); color: #7bd6a5; }
+    .flash-messages .alert-danger  { border-color: rgba(220, 53, 69, 0.4); color: #f28b97; }
+    .flash-messages .alert-warning { border-color: rgba(245, 199, 111, 0.4); color: #F5C76F; }
+    .flash-messages .alert-info    { border-color: rgba(13, 202, 240, 0.4); color: #7bd4e8; }
+
+    .product-img-thumb {
+      width: 44px; height: 44px; object-fit: cover; border-radius: 10px;
+      border: 1px solid rgba(212, 175, 55, 0.25);
+    }
+
+    /* ── Premium confirm modal ── */
+    .premium-confirm-overlay {
+      position: fixed; inset: 0; z-index: 100000;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px; background: rgba(5, 3, 16, 0.6);
+      opacity: 0; visibility: hidden;
+      transition: opacity .25s ease, visibility .25s ease;
+      -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    }
+    .premium-confirm-overlay.show { opacity: 1; visibility: visible; }
+    .premium-confirm-card {
+      width: 100%; max-width: 400px; background: #fff; border-radius: 20px;
+      padding: 30px 26px 24px; text-align: center; position: relative;
+      font-variant: normal;
+      box-shadow: 0 24px 60px rgba(5, 3, 16, 0.5), 0 0 0 1px rgba(245, 199, 111, 0.25);
+      transform: translateY(16px) scale(.96);
+      transition: transform .28s cubic-bezier(.34,1.4,.64,1);
+    }
+    .premium-confirm-overlay.show .premium-confirm-card { transform: translateY(0) scale(1); }
+    .premium-confirm-icon {
+      width: 66px; height: 66px; margin: 0 auto 16px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg,#ff5f6d,#d90429); color: #fff; font-size: 25px;
+      box-shadow: 0 10px 24px rgba(217,4,41,.35), 0 0 0 8px rgba(217,4,41,.10);
+    }
+    .premium-confirm-title {
+      font-size: 17px; font-weight: 800; color: #171136; margin: 0 0 8px;
+      font-variant: normal; letter-spacing: 0;
+    }
+    .premium-confirm-msg {
+      font-size: 13px; color: #777; margin: 0 0 22px; line-height: 1.55;
+      font-variant: normal; letter-spacing: 0;
+    }
+    .premium-confirm-actions { display: flex; gap: 10px; }
+    .premium-confirm-cancel, .premium-confirm-ok {
+      flex: 1; border-radius: 12px; padding: 11px 14px; font-size: 13px;
+      font-weight: 700; cursor: pointer; border: none; font-variant: normal; letter-spacing: 0;
+      transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+    }
+    .premium-confirm-cancel { background: #f1eef8; color: #3C3489; }
+    .premium-confirm-cancel:hover { background: #e7e2f4; }
+    .premium-confirm-ok {
+      background: linear-gradient(135deg,#ff5f6d,#d90429); color: #fff;
+      box-shadow: 0 8px 18px rgba(217,4,41,.30);
+    }
+    .premium-confirm-ok:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(217,4,41,.42); }
+
+    /* ── Storefront premium navbar integration ── */
+    .premium-nav { z-index: 1100; }
+    .mobile-topbar { z-index: 1095; }
+    .bottom-nav { z-index: 1090; }
+    .admin-topbar { display: none; }
+    @media (min-width: 992px) {
+      .sidebar { top: 62px; height: calc(100vh - 62px); }
+      .main-content { padding-top: 88px; }
+    }
+    @media (max-width: 991.98px) {
+      .sidebar { top: 98px; height: calc(100vh - 158px); }
+      .main-content { padding-top: 14px; }
+    }
+    /* Phones: show the admin hamburger bar below the storefront topbar
+       so the sidebar drawer (Reviews, Permissions, ...) can open. */
+    @media (max-width: 767.98px) {
+      .admin-topbar {
+        display: flex;
+        top: 52px;
+        height: 48px;
+        z-index: 295;
+      }
+      .sidebar {
+        top: 100px;
+        height: calc(100vh - 160px);
+      }
+      .main-content { padding-top: 16px; }
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ── Premium enhancements ── */
+    body {
+      font-family: 'Manrope', 'Segoe UI', system-ui, sans-serif;
+      background:
+        radial-gradient(900px 420px at 88% -8%, rgba(108, 91, 214, 0.20), transparent 60%),
+        radial-gradient(800px 380px at -10% 12%, rgba(245, 199, 111, 0.12), transparent 55%),
+        #0e0a23;
+      background-attachment: fixed;
+    }
+    h4, .sidebar-brand, .page-title, .card-custom .card-header, .stat-card .stat-label, label {
+      font-family: 'Sora', 'Manrope', sans-serif;
+    }
+
+    /* custom scrollbar */
+    ::-webkit-scrollbar { width: 9px; height: 9px; }
+    ::-webkit-scrollbar-track { background: #0e0a23; }
+    ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #F5C76F, #6B5BD6); border-radius: 9px; border: 2px solid #0e0a23; }
+    ::-webkit-scrollbar-thumb:hover { background: #F5C76F; }
+
+    /* animated gold line under topbar */
+    .topbar { position: relative; }
+    .topbar::after {
+      content: "";
+      position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
+      background: linear-gradient(100deg, #b58a2b, #F5C76F 30%, #6B5BD6 55%, #F5C76F 80%, #b58a2b);
+      background-size: 200% 100%;
+      animation: kbGoldFlow 6s linear infinite;
+      border-radius: 2px;
+    }
+    @keyframes kbGoldFlow { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+
+    /* glassmorphism cards */
+    .stat-card, .card-custom {
+      background: linear-gradient(150deg, rgba(28, 23, 64, 0.72), rgba(23, 17, 47, 0.88)) !important;
+      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: blur(14px);
+      transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+    }
+    .stat-card:hover, .card-custom:hover {
+      transform: translateY(-3px);
+      border-color: rgba(245, 199, 111, 0.45);
+      box-shadow: 0 18px 44px rgba(5, 3, 16, 0.55), 0 0 0 1px rgba(245, 199, 111, 0.10);
+    }
+    .stat-card .icon {
+      background: linear-gradient(135deg, rgba(245, 199, 111, 0.22), rgba(108, 91, 214, 0.26));
+      box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.6);
+    }
+    .stat-card .stat-num {
+      background: linear-gradient(135deg, #ffffff 30%, #F5C76F 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .card-custom .card-header {
+      background: linear-gradient(180deg, rgba(245, 199, 111, 0.10), transparent) !important;
+    }
+
+    /* gradient page/topbar titles */
+    .page-title, .topbar h4 {
+      background: linear-gradient(120deg, #F5C76F 20%, #6B5BD6 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* sidebar active = gold gradient */
+    .sidebar-nav a.active {
+      background: linear-gradient(135deg, #F5C76F, #D4AF37) !important;
+      color: #171136 !important;
+      box-shadow: 0 10px 24px -8px rgba(245, 199, 111, 0.55);
+      border-left-color: #fff;
+    }
+    .sidebar-nav a.active i { color: #171136 !important; }
+    .sidebar-nav a { transition: transform .15s ease, background .15s ease, color .15s ease; }
+    .sidebar-nav a:hover { transform: translateX(4px); }
+
+    /* button shine */
+    .btn-dark, .btn-action, .btn-primary, .btn-outline-secondary, .btn-outline-danger, .btn-outline-success {
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-dark::after, .btn-action::after, .btn-primary::after, .btn-outline-secondary::after,
+    .btn-outline-danger::after, .btn-outline-success::after {
+      content: "";
+      position: absolute; top: 0; left: -120%; width: 55%; height: 100%;
+      background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+      transform: skewX(-20deg);
+      transition: left .5s ease;
+      pointer-events: none;
+    }
+    .btn-dark:hover::after, .btn-action:hover::after, .btn-primary:hover::after,
+    .btn-outline-secondary:hover::after, .btn-outline-danger:hover::after, .btn-outline-success:hover::after { left: 130%; }
+
+    /* glass form fields */
+    .form-control-sm-custom {
+      background: rgba(14, 10, 35, 0.55) !important;
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+    }
+
+    /* entrance animation */
+    .main-content > * { animation: kbFadeUp .4s ease both; }
+    .main-content > *:nth-child(2) { animation-delay: .05s; }
+    .main-content > *:nth-child(3) { animation-delay: .1s; }
+    @keyframes kbFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @media (prefers-reduced-motion: reduce) { .main-content > *, .topbar::after { animation: none; } }
+  </style>
+</head>
+<body>
+
+  {% include 'shop/inc/navbar.html' %}
+
+  <!-- Tighten the mobile header on admin pages (storefront bar is brand-only for staff) -->
+  <style>
+    @media (max-width: 767.98px) {
+      .mobile-topbar { height: 52px; }
+      body { padding-top: 100px !important; }
+    }
+  </style>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="adminSidebar">
+    <div class="sidebar-brand">
+      <i class="fa fa-cubes"></i>
+      <a href="{% url 'admin_dashboard' %}"><span>KaviBazaar Admin</span></a>
+    </div>
+    <div class="sidebar-nav">
+      {% if request.user.is_staff %}
+      <a href="/admin/" class="{% if request.path == '/admin/' %}active{% endif %}">
+        <i class="fa fa-gears"></i> <span>Django Admin</span>
+      </a>
+      {% endif %}
+      {% if request.user.is_superuser or dashboard_access %}
+      <a href="{% url 'admin_dashboard' %}" class="{% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">
+        <i class="fa fa-dashboard"></i> <span>Dashboard</span>
+      </a>
+      {% endif %}
+      {% if perms.shop.view_product %}
+      <a href="{% url 'admin_products' %}" class="{% if 'products' in request.resolver_match.url_name %}active{% endif %}">
+        <i class="fa fa-shopping-bag"></i> <span>Products</span>
+      </a>
+      {% endif %}
+      {% if perms.shop.view_catagory %}
+      <a href="{% url 'admin_categories' %}" class="{% if 'categories' in request.resolver_match.url_name %}active{% endif %}">
+        <i class="fa fa-tags"></i> <span>Categories</span>
+      </a>
+      {% endif %}
+      {% if perms.shop.view_order %}
+      <a href="{% url 'admin_orders' %}" class="{% if 'orders' in request.resolver_match.url_name %}active{% endif %}">
+        <i class="fa fa-list-alt"></i> <span>Orders</span>
+      </a>
+      {% endif %}
+      {% if perms.shop.view_payment %}
+      <a href="{% url 'admin_payments' %}" class="{% if 'payment' in request.resolver_match.url_name %}active{% endif %}">
+        <i class="fa fa-credit-card"></i> <span>Payments</span>
+      </a>
+      {% endif %}
+      {% if perms.shop.view_productrating %}
+      <a href="{% url 'admin_reviews' %}" class="{% if 'review' in request.resolver_match.url_name %}active{% endif %}">
+        <i class="fa fa-star"></i> <span>Reviews</span>
+      </a>
+      {% endif %}
+      {% if perms.shop.change_product %}
+      <a href="{% url 'low_stock' %}" class="{% if request.resolver_match.url_name == 'low_stock' %}active{% endif %}">
+        <i class="fa fa-exclamation-triangle"></i> <span>Low Stock</span>
+      </a>
+      {% endif %}
+      {% if request.user.is_superuser %}
+      <a href="{% url 'admin_staff_permissions' %}" class="{% if request.resolver_match.url_name == 'admin_staff_permissions' %}active{% endif %}">
+        <i class="fa fa-key"></i> <span>Permissions</span>
+      </a>
+      {% endif %}
+      {% if perms.shop.change_notification or request.user.is_superuser %}
+      <a href="{% url 'admin_send_announcement' %}" class="{% if request.resolver_match.url_name == 'admin_send_announcement' %}active{% endif %}">
+        <i class="fa fa-bullhorn"></i> <span>Send Announcement</span>
+      </a>
+      {% endif %}
+      <hr>
+      <a href="{% url 'logout' %}"><i class="fa fa-sign-out"></i> <span>Logout</span></a>
+    </div>
+  </aside>
+
+  <div class="sidebar-overlay" id="adminOverlay" onclick="toggleAdminSidebar(false)"></div>
+
+  <!-- Mobile top bar -->
+  <div class="admin-topbar">
+    <button class="hamburger" onclick="toggleAdminSidebar()" aria-label="Open menu">
+      <i class="fa fa-bars"></i>
+    </button>
+    <span class="admin-brand-mobile"><i class="fa fa-cubes" style="margin-right:6px;"></i>KaviBazaar Admin</span>
+    <a href="{% url 'logout' %}" class="logout-icon" title="Logout"><i class="fa fa-sign-out"></i></a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="topbar">
+      <h4>{% block page_title %}Dashboard{% endblock %}</h4>
+      <div class="user-info">
+        <i class="fa fa-user-circle"></i>
+        {{ request.user.username }}
+        <a href="{% url 'logout' %}">Logout</a>
+      </div>
+    </div>
+
+    {% if messages %}
+    <div class="flash-messages mb-3">
+      {% for msg in messages %}
+      <div class="alert alert-{{ msg.tags }} alert-dismissible fade show" role="alert">
+        {{ msg }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </div>
+
+  <script>
+  function toggleAdminSidebar(open) {
+    var sb = document.getElementById('adminSidebar');
+    var ov = document.getElementById('adminOverlay');
+    if (typeof open === 'undefined') {
+      open = !sb.classList.contains('open');
+    }
+    if (open) { sb.classList.add('open'); ov.classList.add('show'); document.body.style.overflow = 'hidden'; }
+    else { sb.classList.remove('open'); ov.classList.remove('show'); document.body.style.overflow = ''; }
+  }
+  var closeBtn = document.querySelectorAll('.sidebar-nav a');
+  closeBtn.forEach(function(a){ a.addEventListener('click', function(){ toggleAdminSidebar(false); }); });
+  </script>
+  <!-- Premium confirm modal -->
+  <div id="premiumConfirmModal" class="premium-confirm-overlay" aria-hidden="true">
+    <div class="premium-confirm-card" role="alertdialog" aria-modal="true" aria-labelledby="premiumConfirmTitle">
+      <div class="premium-confirm-icon"><i class="fa fa-trash"></i></div>
+      <h5 class="premium-confirm-title" id="premiumConfirmTitle">Are you sure?</h5>
+      <p class="premium-confirm-msg" id="premiumConfirmMsg">This action cannot be undone.</p>
+      <div class="premium-confirm-actions">
+        <button type="button" class="premium-confirm-cancel" data-result="cancel">Cancel</button>
+        <button type="button" class="premium-confirm-ok" data-result="confirm">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function() {
+    var modal = document.getElementById('premiumConfirmModal');
+    var titleEl = document.getElementById('premiumConfirmTitle');
+    var msgEl = document.getElementById('premiumConfirmMsg');
+    var okBtn = modal.querySelector('.premium-confirm-ok');
+    var cancelBtn = modal.querySelector('.premium-confirm-cancel');
+    var iconEl = modal.querySelector('.premium-confirm-icon');
+    var resolver = null;
+
+    function close(result) {
+      modal.classList.remove('show');
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      if (resolver) { var r = resolver; resolver = null; r(result); }
+    }
+    cancelBtn.addEventListener('click', function() { close(false); });
+    okBtn.addEventListener('click', function() { close(true); });
+    modal.addEventListener('click', function(e) { if (e.target === modal) close(false); });
+    document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && modal.classList.contains('show')) close(false); });
+
+    window.premiumConfirm = function(opts) {
+      opts = opts || {};
+      titleEl.textContent = opts.title || 'Are you sure?';
+      msgEl.textContent = opts.message || 'This action cannot be undone.';
+      okBtn.textContent = opts.confirmText || 'Confirm';
+      cancelBtn.style.display = opts.alertOnly ? 'none' : '';
+      if (opts.confirmIcon) iconEl.innerHTML = '<i class="fa ' + opts.confirmIcon + '"></i>';
+      modal.classList.add('show');
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      okBtn.focus();
+      return new Promise(function(resolve) { resolver = resolve; });
+    };
+
+    window.premiumConfirmAction = function(message, el, opts) {
+      opts = opts || {};
+      premiumConfirm({
+        title: opts.title || 'Are you sure?',
+        message: message,
+        confirmText: opts.confirmText || 'Confirm',
+        confirmIcon: opts.confirmIcon || 'fa-check-circle'
+      }).then(function(ok) {
+        if (ok && el) window.location.href = el.href;
+      });
+      return false;
+    };
+
+    window.premiumAlert = function(message, opts) {
+      opts = opts || {};
+      return premiumConfirm({
+        title: opts.title || 'Notice',
+        message: message,
+        confirmText: opts.confirmText || 'OK',
+        confirmIcon: opts.confirmIcon || 'fa-info-circle',
+        alertOnly: true
+      });
+    };
+  })();
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

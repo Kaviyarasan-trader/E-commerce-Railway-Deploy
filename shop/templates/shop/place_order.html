@@ -1,0 +1,1112 @@
+{% extends 'shop/layouts/main.html' %}
+{% load static %}
+{% block title %}Checkout | KaviBazaar{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  .checkout-section {
+    background: #faf9f6;
+    min-height: 600px;
+    padding: 48px 0 64px;
+  }
+  .section-title {
+    font-size: 26px;
+    font-weight: 700;
+    color: #1a1a1a;
+    font-family: Georgia, serif;
+  }
+  .premium-divider {
+    border: none;
+    border-top: 1px solid #e8e5dc;
+    margin: 16px 0 28px;
+  }
+  .checkout-card {
+    background: #fff;
+    border: 1px solid #ece9e1;
+    border-radius: 16px;
+    padding: 28px;
+  }
+  .step-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .step-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: #1a1a1a;
+  }
+  .order-summary-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0ede6;
+    font-size: 13px;
+    color: #333;
+  }
+  .order-summary-item:last-child { border-bottom: none; }
+  .summary-head {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    color: #555;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f0ede6;
+  }
+  .discount-row span:last-child { color: #28a745; font-weight: 600; }
+  .free { color: #28a745; font-weight: 600; }
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 14px 0 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a1a1a;
+  }
+  .save-note {
+    font-size: 12px;
+    color: #28a745;
+    font-weight: 600;
+    margin-top: 8px;
+  }
+  .btn-primary-custom {
+    width: 100%;
+    height: 46px;
+    background: #3C3489;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: opacity .15s;
+  }
+  .btn-primary-custom:hover { opacity: .88; color:#fff; }
+  .btn-primary-custom:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-back {
+    height: 38px;
+    background: transparent;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #666;
+    padding: 0 16px;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .btn-back:hover { background: #f0ede6; }
+  .form-label { font-size: 13px; font-weight: 600; color: #555; }
+  .form-control:focus { border-color: #3C3489; box-shadow: none; }
+
+  #payment-section, #payment-status { display: none; }
+  #delivery-section, #payment-section { scroll-margin-top: 115px; }
+
+  /* Flipkart-style payment method rows */
+  .pay-method {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border: 1px solid #e9e6de;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    background: #fff;
+  }
+  .pay-method:hover { border-color: #3C3489; }
+  .pay-method.disabled,
+  .pay-method.disabled:hover {
+    opacity: .55;
+    cursor: not-allowed;
+    border-color: #e9e6de;
+    background: #fafaf8;
+  }
+  .pay-method.selected {
+    border-color: #3C3489;
+    background: #f7f6ff;
+    box-shadow: 0 0 0 1px #3C3489;
+  }
+  .pay-method input { display: none; }
+  .pay-method-icon {
+    width: 42px; height: 42px;
+    border-radius: 10px;
+    background: #f1efff;
+    color: #3C3489;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .pay-method-body { flex: 1; }
+  .pay-method-title { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+  .pay-method-sub { font-size: 12px; color: #999; margin-top: 1px; }
+  .pay-method-radio {
+    width: 18px; height: 18px;
+    border: 2px solid #ccc;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .pay-method.selected .pay-method-radio {
+    border-color: #3C3489;
+    border-width: 6px;
+  }
+  .cod-unavailable-msg {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px dashed #f0c1c1;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    background: #fff7f7;
+    color: #C0392B;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .cod-unavailable-msg i { color: #C0392B; font-size: 16px; flex-shrink: 0; }
+
+  .upi-panel {
+    background: #f8f7f4;
+    border: 1px solid #e4e1d8;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin: 4px 0 16px;
+  }
+  .upi-panel input {
+    background: transparent;
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 15px;
+    color: #1a1a1a;
+  }
+  .upi-panel input::placeholder { color: #ccc; }
+
+  .secure-note {
+    font-size: 12px;
+    color: #999;
+    text-align: center;
+    margin-top: 14px;
+  }
+  .secure-note i { color: #3C3489; }
+
+  .cod-badge {
+    display: inline-block;
+    background: #EAF3DE;
+    color: #27500A;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  .row-cards { display: flex; gap: 12px; }
+  .row-cards .flex-grow { flex: 1; }
+
+  @media (max-width: 767px) {
+    .checkout-section { padding: 24px 0 40px; }
+    .checkout-card { padding: 20px; }
+    .row-cards { flex-direction: column; gap: 0; }
+  }
+</style>
+
+<section class="checkout-section">
+  <div class="container">
+    <div class="row">
+      <div class="col-12">
+        <h1 class="section-title">Checkout</h1>
+        <hr class="premium-divider">
+        {% include 'shop/inc/message.html' %}
+      </div>
+
+      <div class="col-md-7 mb-4">
+        <div class="checkout-card">
+
+          <!-- Step 1: Delivery Address -->
+          <div id="delivery-section">
+            <div class="step-head">
+              <h5 class="step-title">1. Delivery Address</h5>
+            </div>
+
+            {% if saved_addresses %}
+            <div id="saved-addresses-wrap" class="mb-3">
+              <h6 style="font-size:14px;font-weight:700;color:#1a1a1a;margin-bottom:10px;">
+                <i class="fa fa-book me-1" style="color:#3C3489;"></i> Saved Addresses
+              </h6>
+              <div id="saved-address-list">
+                {% for a in saved_addresses %}
+                <div class="saved-addr-item" style="display:flex;align-items:flex-start;gap:10px;border:1px solid #ece9e1;border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff;transition:border-color .15s;">
+                  <label style="flex:1;display:flex;gap:10px;align-items:flex-start;cursor:pointer;margin:0;">
+                    <input type="radio" name="saved_address" value="{{ a.id }}" class="saved-addr-radio" style="flex:none;margin-top:3px;">
+                    <span style="font-size:13px;display:block;">
+                      <strong style="color:#3C3489;">{{ a.label|default:'Address' }}</strong>
+                      <span style="display:block;color:#555;margin-top:2px;">{{ a.address }}{% if a.locality %}, {{ a.locality }}{% endif %}{% if a.landmark %}, {{ a.landmark }}{% endif %} - {{ a.pincode }}</span>
+                      {% if a.phone %}<span style="display:block;color:#888;font-size:12px;margin-top:2px;">{{ a.phone }}</span>{% endif %}
+                    </span>
+                  </label>
+                  <button type="button" class="delete-addr-btn" data-id="{{ a.id }}" title="Delete" style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:13px;flex:none;padding:2px;"><i class="fa fa-trash"></i></button>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+
+            <div class="mb-3 d-flex gap-2 flex-wrap">
+              <button type="button" id="useLocationBtn" class="btn btn-outline-secondary btn-sm" style="border-radius:10px;font-size:13px;">
+                <i class="fa fa-location-arrow me-1" style="color:#3C3489;"></i> Use Current Location
+              </button>
+            </div>
+
+            <div id="location-status" style="display:none;font-size:12px;background:#FCEBEB;border:1px solid #F7C1C1;color:#791F1F;padding:8px 10px;border-radius:8px;margin-bottom:8px;"></div>
+
+            <div id="map-container" style="display:none;margin-bottom:14px;">
+              <div id="map" style="height:260px;border-radius:12px;border:1px solid #ece9e1;"></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
+                <span style="font-size:11px;color:#888;">
+                  <i class="fa fa-map-pin" style="color:#dc3545;"></i>
+                  Selected location: <strong id="selected-coords">—</strong>
+                </span>
+                <span style="font-size:11px;color:#bbb;">Drag the marker to adjust</span>
+              </div>
+            </div>
+
+            <input type="hidden" id="latitude" name="latitude" value="">
+            <input type="hidden" id="longitude" name="longitude" value="">
+
+            <div class="mb-3">
+              <label class="form-label">Pincode</label>
+              <input type="text" id="pincode" class="form-control" placeholder="600001" maxlength="6" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'');document.getElementById('pincodeNote').style.display='none';" required>
+              <div id="pincodeNote" style="display:none;color:#b30000;font-size:12px;margin-top:4px;">Could not reliably detect the pincode for this location. Please enter or confirm it manually.</div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Locality / Area</label>
+              <input type="text" id="locality" class="form-control" placeholder="Enter your locality" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Address (House No, Building, Street)</label>
+              <textarea id="address" class="form-control" rows="2" placeholder="Enter your address" required></textarea>
+            </div>
+            <div id="locWarn" style="display:none;background:#FFF7E0;border:1px solid #FFD77A;color:#7a5b00;font-size:12px;padding:8px 10px;border-radius:8px;margin-bottom:12px;">⚠️ Location-based address is approximately 50% accurate. Please manually check and confirm your address before saving.</div>
+            <div class="mb-3">
+              <label class="form-label">Landmark <span style="color:#999;font-weight:400;">(optional)</span></label>
+              <input type="text" id="landmark" class="form-control" placeholder="E.g. near park, opposite to school">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Phone Number</label>
+              <input type="tel" id="phone" class="form-control"
+                     placeholder="Enter your 10-digit phone number" maxlength="10"
+                     inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')" required>
+            </div>
+            <div class="mb-3" id="saveAddrWrap">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:#444;">
+                <input type="checkbox" id="saveAddress" class="form-check-input" style="margin:0;">
+                <span>Save this address for next time</span>
+              </label>
+              <div id="addrLabelWrap" style="display:none;margin-top:8px;">
+                <label class="form-label">Address Label <span style="color:#999;font-weight:400;">(optional - e.g. Home, Office)</span></label>
+                <input type="text" id="addressLabel" class="form-control" placeholder="e.g. Home, Office, Shop" maxlength="100">
+              </div>
+              <div id="saveAddrStatus" style="display:none;margin-top:8px;font-size:12px;color:#28a745;font-weight:600;"></div>
+            </div>
+            <button class="btn-primary-custom" id="continueBtn">
+              <i class="fa fa-arrow-right me-2"></i> Continue to Payment
+            </button>
+          </div>
+
+          <!-- Step 2: Payment Methods -->
+          <div id="payment-section">
+            <div class="step-head">
+              <h5 class="step-title">2. Payment Options</h5>
+              <button class="btn-back" id="backBtn" type="button"><i class="fa fa-arrow-left me-1"></i> Address</button>
+            </div>
+
+            <label class="pay-method" data-method="UPI">
+              <input type="radio" name="payment_method" value="UPI">
+              <div class="pay-method-icon"><i class="fa fa-mobile"></i></div>
+              <div class="pay-method-body">
+                <div class="pay-method-title">UPI</div>
+                <div class="pay-method-sub">Google Pay, PhonePe, Paytm, BHIM</div>
+              </div>
+              <div class="pay-method-radio"></div>
+            </label>
+            <div class="upi-panel" id="upiPanel" style="display:none;">
+              <input type="text" id="upiId" placeholder="Enter your UPI ID  (e.g. name@okhdfcbank)">
+            </div>
+
+            <label class="pay-method" data-method="CARD">
+              <input type="radio" name="payment_method" value="CARD">
+              <div class="pay-method-icon"><i class="fa fa-credit-card"></i></div>
+              <div class="pay-method-body">
+                <div class="pay-method-title">Credit / Debit Card</div>
+                <div class="pay-method-sub">Visa, Mastercard, RuPay, Amex</div>
+              </div>
+              <div class="pay-method-radio"></div>
+            </label>
+
+            <label class="pay-method" data-method="NETBANKING">
+              <input type="radio" name="payment_method" value="NETBANKING">
+              <div class="pay-method-icon"><i class="fa fa-university"></i></div>
+              <div class="pay-method-body">
+                <div class="pay-method-title">Net Banking</div>
+                <div class="pay-method-sub">SBI, HDFC, ICICI, Axis &amp; more</div>
+              </div>
+              <div class="pay-method-radio"></div>
+            </label>
+
+            <label class="pay-method" data-method="WALLET">
+              <input type="radio" name="payment_method" value="WALLET">
+              <div class="pay-method-icon"><i class="fa fa-google-wallet"></i></div>
+              <div class="pay-method-body">
+                <div class="pay-method-title">Wallet</div>
+                <div class="pay-method-sub">Paytm, PhonePe, Amazon Pay, Mobikwik</div>
+              </div>
+              <div class="pay-method-radio"></div>
+            </label>
+
+            <label class="pay-method" data-method="EMI">
+              <input type="radio" name="payment_method" value="EMI">
+              <div class="pay-method-icon"><i class="fa fa-calendar-check-o"></i></div>
+              <div class="pay-method-body">
+                <div class="pay-method-title">EMI (Easy Installments)</div>
+                <div class="pay-method-sub">No cost EMI on select cards</div>
+              </div>
+              <div class="pay-method-radio"></div>
+            </label>
+
+            {% if cod_available %}
+            <label class="pay-method" data-method="COD">
+              <input type="radio" name="payment_method" value="COD">
+              <div class="pay-method-icon"><i class="fa fa-money"></i></div>
+              <div class="pay-method-body">
+                <div class="pay-method-title">Cash on Delivery</div>
+                <div class="pay-method-sub">Pay in cash when your order arrives</div>
+              </div>
+              <div class="pay-method-radio"></div>
+            </label>
+            {% else %}
+            <div class="cod-unavailable-msg">
+              <i class="fa fa-money"></i>
+              <span>Cash on Delivery is not available for this product.</span>
+            </div>
+            {% endif %}
+
+            <div id="payment-status">
+              <i class="fa fa-spinner fa-spin" style="font-size:28px;"></i>
+              <p class="mt-2" style="font-size:14px;color:#888;">Processing payment...</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Order Summary -->
+      <div class="col-md-5 mb-4">
+        <div class="checkout-card" style="position:sticky;top:90px;">
+          <h6 class="summary-head">PRICE DETAILS</h6>
+          <div class="order-summary-item">
+            <span>Price ({{ cart|length }} items)</span>
+            <span>Rs. {{ mrp|stringformat:'d' }}</span>
+          </div>
+          <div class="order-summary-item discount-row">
+            <span>Discount</span>
+            <span>- Rs. {{ discount|stringformat:'d' }}</span>
+          </div>
+          <div class="order-summary-item">
+            <span>Delivery Charges</span>
+            <span class="free">FREE</span>
+          </div>
+          <div class="total-row">
+            <span>Total Amount</span>
+            <span>Rs. {{ total|stringformat:'d' }}</span>
+          </div>
+          <div class="save-note">You will save Rs. {{ discount|stringformat:'d' }} on this order</div>
+
+          <button class="btn-primary-custom" id="placeOrderBtn">
+            <i class="fa fa-lock me-2"></i> PLACE ORDER
+          </button>
+          <p class="secure-note"><i class="fa fa-shield me-1"></i> 100% secure payments powered by Razorpay</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Test-mode simulated Razorpay checkout modal (only when Razorpay keys are not configured) -->
+<div id="mockModal" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(15,20,35,0.55);align-items:center;justify-content:center;padding:20px;">
+  <div style="width:100%;max-width:380px;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,0.3);">
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 18px;background:linear-gradient(135deg,#0a0d1a 0%,#1a2140 100%);color:#fff;">
+      <div style="width:52px;height:52px;border-radius:12px;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:9px;font-weight:800;letter-spacing:1px;line-height:1.2;text-align:center;border:1px solid rgba(255,255,255,0.2);">TEST<br>MODE</div>
+      <div style="flex:1;">
+        <div style="font-size:14px;font-weight:700;">Razorpay Test Checkout</div>
+        <div style="font-size:11px;color:#aab3d0;">Simulated payment - no real charge</div>
+      </div>
+      <button type="button" id="mockCancel" style="background:none;border:none;color:#fff;font-size:22px;line-height:1;cursor:pointer;">&times;</button>
+    </div>
+    <div style="padding:20px 18px;">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:#777;margin-bottom:6px;">
+        <span>Order #<span id="mockOrderNo">0</span></span>
+        <span>Amount payable</span>
+      </div>
+      <div style="font-size:26px;font-weight:800;color:#0a0d1a;margin-bottom:14px;">Rs. <span id="mockAmount">0</span></div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#b3541e;background:#fdf0e7;border:1px solid #f3c7a8;border-radius:8px;padding:9px 12px;margin-bottom:16px;">
+        <i class="fa fa-info-circle"></i> TEST payment - your card/UPI will <b>&nbsp;not&nbsp;</b> be charged.
+      </div>
+      <button type="button" id="mockPayBtn" style="width:100%;padding:13px;border:none;border-radius:10px;background:#3C3489;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">
+        <i class="fa fa-lock me-2"></i> PAY NOW
+      </button>
+      <div style="display:flex;justify-content:center;gap:14px;margin-top:14px;font-size:11px;color:#999;">
+        <span>UPI</span><span>Card</span><span>NetBanking</span><span>Wallet</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{ saved_addresses_json|json_script:"savedAddressesData" }}
+
+<script>
+const csrfToken = '{{ csrf_token }}';
+const buyNowPid = '{{ buy_now_pid|default:'' }}';
+const deliverySection = document.getElementById('delivery-section');
+const paymentSection = document.getElementById('payment-section');
+const continueBtn = document.getElementById('continueBtn');
+const backBtn = document.getElementById('backBtn');
+const placeOrderBtn = document.getElementById('placeOrderBtn');
+const statusDiv = document.getElementById('payment-status');
+const upiPanel = document.getElementById('upiPanel');
+const upiIdInput = document.getElementById('upiId');
+const pincodeInput = document.getElementById('pincode');
+const localityInput = document.getElementById('locality');
+const addressInput = document.getElementById('address');
+const landmarkInput = document.getElementById('landmark');
+const phoneInput = document.getElementById('phone');
+
+/* ── Step navigation ── */
+function missingAddressFields() {
+  const missing = [];
+  if (!pincodeInput.value.trim()) missing.push('Pincode');
+  if (!localityInput.value.trim()) missing.push('Locality / Area');
+  if (!addressInput.value.trim()) missing.push('Address');
+  if (!phoneInput.value.trim()) missing.push('Phone Number');
+  return missing;
+}
+
+continueBtn.addEventListener('click', function() {
+  const missing = missingAddressFields();
+  if (missing.length) {
+    premiumAlert('Please fill in: ' + missing.join(', '), { title: 'Missing Details', confirmIcon: 'fa-exclamation-circle' });
+    return;
+  }
+  deliverySection.style.display = 'none';
+  paymentSection.style.display = 'block';
+  paymentSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+backBtn.addEventListener('click', function() {
+  paymentSection.style.display = 'none';
+  deliverySection.style.display = 'block';
+  deliverySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+/* ── Payment method selection ── */
+document.querySelectorAll('.pay-method').forEach(function(el) {
+  el.addEventListener('click', function() {
+    if (el.classList.contains('disabled')) return;
+    document.querySelectorAll('.pay-method').forEach(function(x) { x.classList.remove('selected'); });
+    el.classList.add('selected');
+    el.querySelector('input').checked = true;
+    const isUpi = el.dataset.method === 'UPI';
+    upiPanel.style.display = isUpi ? 'block' : 'none';
+    if (!isUpi) upiIdInput.value = '';
+  });
+});
+
+function resetPayBtn() {
+  placeOrderBtn.disabled = false;
+  placeOrderBtn.innerHTML = '<i class="fa fa-lock me-2"></i> PLACE ORDER';
+  statusDiv.style.display = 'none';
+}
+
+/* ── Load Razorpay Checkout script on demand ── */
+function loadRazorpay() {
+  return new Promise(function(resolve, reject) {
+    if (window.Razorpay) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    s.onload = resolve;
+    s.onerror = function() { reject(new Error('Failed to load payment gateway. Please check your internet connection.')); };
+    document.head.appendChild(s);
+  });
+}
+
+/* ── Step 2b: Verify payment signature ── */
+function verifyPayment(response, data) {
+  fetch("{% url 'verify_payment' %}", {
+    method: 'POST',
+    headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      razorpay_order_id: response.razorpay_order_id,
+      razorpay_payment_id: response.razorpay_payment_id,
+      razorpay_signature: response.razorpay_signature
+    })
+  })
+  .then(r => r.json().then(d => ({ ok: r.ok, d: d })))
+  .then(function({ ok, d }) {
+    if (!ok || d.error) {
+      premiumAlert(d.error || 'Payment verification failed.', { title: 'Payment Failed', confirmIcon: 'fa-exclamation-circle' });
+      window.location.href = '/payment/failed/' + data.db_order_id;
+      return;
+    }
+    window.location.href = '/payment/success/' + d.order_id;
+  })
+  .catch(function() {
+    window.location.href = '/payment/failed/' + data.db_order_id;
+  });
+}
+
+/* ── Step 2a: Open Razorpay modal ── */
+function openRazorpay(data) {
+  const methodMap = { UPI: 'upi', CARD: 'card', NETBANKING: 'netbanking', WALLET: 'wallet', EMI: 'emi' };
+  const options = {
+    key: data.razorpay_key_id,
+    amount: data.amount,
+    currency: data.currency || 'INR',
+    name: 'KaviBazaar',
+    description: 'Order #' + data.db_order_id,
+    order_id: data.razorpay_order_id,
+    prefill: { contact: phoneInput.value.trim() },
+    theme: { color: '#3C3489' },
+    handler: function(response) { verifyPayment(response, data); },
+    modal: {
+      ondismiss: function() {
+        window.location.href = '/payment/cancelled/' + data.db_order_id;
+      }
+    }
+  };
+  if (methodMap[data.prefilled_method]) {
+    options.method = methodMap[data.prefilled_method];
+  }
+  if (data.prefilled_method === 'UPI') {
+    const upiId = upiIdInput.value.trim();
+    if (upiId) options.upi = { flow: 'collect', vpa: upiId };
+  }
+  const rzp = new Razorpay(options);
+  rzp.open();
+}
+
+/* ── Step 2a (test mode): Simulated Razorpay checkout modal ── */
+function openMockCheckout(data) {
+  window._mockData = data;
+  document.getElementById('mockOrderNo').textContent = data.db_order_id;
+  document.getElementById('mockAmount').textContent = (data.amount / 100).toFixed(2);
+  const modal = document.getElementById('mockModal');
+  modal.style.display = 'flex';
+}
+
+function closeMockCheckout() {
+  document.getElementById('mockModal').style.display = 'none';
+}
+
+function mockPayNow() {
+  const data = window._mockData;
+  closeMockCheckout();
+  verifyPayment({
+    razorpay_order_id: data.razorpay_order_id,
+    razorpay_payment_id: 'mock_pay_' + data.db_order_id,
+    razorpay_signature: 'mock_sig_' + data.db_order_id
+  }, data);
+}
+
+function mockCancelCheckout() {
+  const data = window._mockData;
+  closeMockCheckout();
+  window.location.href = '/payment/cancelled/' + data.db_order_id;
+}
+
+document.getElementById('mockPayBtn').addEventListener('click', mockPayNow);
+document.getElementById('mockCancel').addEventListener('click', mockCancelCheckout);
+
+/* ── Place order ── */
+placeOrderBtn.addEventListener('click', function() {
+  const selected = document.querySelector('input[name="payment_method"]:checked');
+  if (!selected) {
+    premiumAlert('Please select a payment method.', { title: 'No Payment Method', confirmIcon: 'fa-exclamation-circle' });
+    return;
+  }
+  const method = selected.value;
+
+  if (method === 'UPI' && !upiIdInput.value.trim()) {
+    premiumAlert('Please enter your UPI ID (e.g. name@okhdfcbank).', { title: 'UPI ID Required', confirmIcon: 'fa-exclamation-circle' });
+    return;
+  }
+
+  placeOrderBtn.disabled = true;
+  placeOrderBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Placing order...';
+
+  const params = new URLSearchParams({
+    pincode: pincodeInput.value.trim(),
+    locality: localityInput.value.trim(),
+    address: addressInput.value.trim(),
+    landmark: landmarkInput.value.trim(),
+    phone: phoneInput.value.trim(),
+    latitude: document.getElementById('latitude').value,
+    longitude: document.getElementById('longitude').value,
+    method: method
+  });
+  if (buyNowPid) params.set('buy_now', buyNowPid);
+  if (method === 'UPI') params.set('upi_id', upiIdInput.value.trim());
+  if (document.getElementById('saveAddress').checked && !justSavedAddressId) {
+    params.set('save_address', 'on');
+    params.set('address_label', document.getElementById('addressLabel').value.trim());
+  }
+
+  fetch("{% url 'create_payment_order' %}", {
+    method: 'POST',
+    headers: { 'X-CSRFToken': csrfToken },
+    body: params
+  })
+  .then(r => r.text().then(t => ({ ok: r.ok, text: t })))
+  .then(function({ ok, text }) {
+    let d;
+    try {
+      d = JSON.parse(text);
+    } catch (e) {
+      premiumAlert('Server error (status ' + (text.includes('<!DOCTYPE') ? '500/page' : 'unknown') + '). ' + text.slice(0, 300), { title: 'Server Error', confirmIcon: 'fa-exclamation-circle' });
+      resetPayBtn();
+      return;
+    }
+    if (!ok || d.error) {
+      premiumAlert(d.error || 'Something went wrong. Please try again.', { title: 'Order Failed', confirmIcon: 'fa-exclamation-circle' });
+      resetPayBtn();
+      return;
+    }
+    if (d.mode === 'cod') {
+      statusDiv.innerHTML = '<i class="fa fa-check-circle" style="font-size:40px;color:#28a745;"></i><p class="mt-3" style="font-size:16px;font-weight:700;color:#28a745;">Order Placed!</p><p style="font-size:13px;color:#888;">Redirecting to orders...</p>';
+      statusDiv.style.display = 'block';
+      setTimeout(function() { window.location.href = '/payment/success/' + d.db_order_id; }, 1500);
+      return;
+    }
+    if (d.mock) {
+      openMockCheckout(d);
+      resetPayBtn();
+      return;
+    }
+    /* online payment → open Razorpay modal */
+    loadRazorpay()
+      .then(function() { openRazorpay(d); resetPayBtn(); })
+      .catch(function(err) { premiumAlert(err.message, { title: 'Payment Failed', confirmIcon: 'fa-exclamation-circle' }); resetPayBtn(); });
+  })
+  .catch(function(err) {
+    premiumAlert(err.message || 'Network error. Please try again.', { title: 'Network Error', confirmIcon: 'fa-exclamation-circle' });
+    resetPayBtn();
+  });
+});
+
+/* ── Use Current Location (Leaflet + OpenStreetMap, no API key needed) ── */
+const useLocationBtn = document.getElementById('useLocationBtn');
+const locationStatus = document.getElementById('location-status');
+const mapContainer = document.getElementById('map-container');
+const selectedCoords = document.getElementById('selected-coords');
+const latInput = document.getElementById('latitude');
+const lngInput = document.getElementById('longitude');
+
+let map = null;
+let marker = null;
+
+function setStatus(msg) {
+  locationStatus.style.display = 'block';
+  locationStatus.textContent = msg;
+  if (msg.indexOf('Getting your location') === 0 || msg.indexOf('Getting a more accurate location') === 0) {
+    locationStatus.style.background = '#E7F6E7';
+    locationStatus.style.border = '1px solid #BFE8BF';
+    locationStatus.style.color = '#145214';
+  } else {
+    locationStatus.style.background = '#FCEBEB';
+    locationStatus.style.border = '1px solid #F7C1C1';
+    locationStatus.style.color = '#791F1F';
+  }
+}
+
+function updateCoords(lat, lng, accuracy) {
+  latInput.value = lat.toFixed(6);
+  lngInput.value = lng.toFixed(6);
+  selectedCoords.textContent = lat.toFixed(5) + ', ' + lng.toFixed(5);
+  reverseGeocode(lat, lng, accuracy);
+}
+
+function reverseGeocode(lat, lng, accuracy) {
+  fetch('{% url "reverse_geocode" %}?lat=' + lat + '&lng=' + lng + '&accuracy=' + accuracy, {
+    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.error) {
+      setStatus('Reverse geocoding failed. Address was not auto-filled - please enter it manually.');
+      return;
+    }
+    document.getElementById('locWarn').style.display = 'block';
+    if (data.pincode && !pincodeInput.value.trim()) {
+      pincodeInput.value = data.pincode;
+    }
+    const pinNote = document.getElementById('pincodeNote');
+    if (data.pincode) {
+      pinNote.style.display = 'none';
+    } else if (!pincodeInput.value.trim()) {
+      pinNote.style.display = 'block';
+    }
+    if (!localityInput.value.trim() && data.locality) {
+      localityInput.value = data.locality;
+    }
+    if (!addressInput.value.trim() && data.address) {
+      addressInput.value = data.address;
+    }
+    if (!landmarkInput.value.trim() && data.landmark) {
+      landmarkInput.value = data.landmark;
+    }
+    fetchLandmark(lat, lng);
+    if (accuracy > 0) {
+      let note;
+      if (accuracy <= GOOD_ACCURACY) {
+        note = 'Location detected (±' + accuracy + ' m accuracy). GPS is approximate - please verify the address.';
+      } else if (accuracy <= ACCEPTABLE_ACCURACY) {
+        note = 'Location detected (±' + accuracy + ' m accuracy, approximate). Move the marker or edit the address if needed.';
+      } else {
+        note = 'Location detected (±' + accuracy + ' m accuracy, approximate, may be off). Move the marker to correct, or enter the address manually.';
+      }
+      if (!pincodeInput.value.trim()) note += ' Pincode not found for this spot - please enter it manually.';
+      setStatus(note);
+    } else {
+      setStatus('Address updated from the marker. Please verify the address before placing the order.');
+    }
+  })
+  .catch(function() {
+    setStatus('Reverse geocoding failed. Address was not auto-filled - please enter it manually.');
+  });
+}
+
+function fetchLandmark(lat, lng) {
+  fetch('{% url "nearby_landmark" %}?lat=' + lat + '&lng=' + lng, {
+    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.landmark && !landmarkInput.value.trim()) {
+      landmarkInput.value = data.landmark;
+    }
+  })
+  .catch(function() {});
+}
+
+function loadLeaflet(callback) {
+  if (window.L) { callback(); return; }
+  const script = document.createElement('script');
+  script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+  script.onload = callback;
+  script.onerror = function() {
+    setStatus('Unable to load the map. Please check your internet connection.');
+  };
+  document.head.appendChild(script);
+}
+
+function initLocationMap(lat, lng, accuracy) {
+  mapContainer.style.display = 'block';
+  const mapDiv = document.getElementById('map');
+  if (map) { map.remove(); }
+  map = L.map(mapDiv, { scrollWheelZoom: false }).setView([lat, lng], 16);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+  marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+  updateCoords(lat, lng, accuracy);
+  marker.on('dragend', function() {
+    const pos = marker.getLatLng();
+    updateCoords(pos.lat, pos.lng, 0);   /* exact position chosen by the user */
+  });
+  map.on('click', function(e) {
+    marker.setLatLng(e.latlng);
+    updateCoords(e.latlng.lat, e.latlng.lng, 0);   /* exact position chosen by the user */
+  });
+  setTimeout(function() { map.invalidateSize(); }, 100);
+}
+
+if (useLocationBtn) {
+  useLocationBtn.addEventListener('click', function() {
+    if (!navigator.geolocation) {
+      setStatus('Geolocation is not supported by this browser.');
+      return;
+    }
+    useLocationBtn.disabled = true;
+    acquireBestLocation(function(best) {
+      useLocationBtn.disabled = false;
+      const accuracy = Math.round(best.accuracy);
+      console.log('Best GPS fix → lat:', best.lat, 'lng:', best.lng, 'accuracy:', accuracy + ' m');
+      setStatus('Best location found (±' + accuracy + ' m, approximate). Showing on map...');
+      loadLeaflet(function() {
+        initLocationMap(best.lat, best.lng, accuracy);
+      });
+    }, function(msg) {
+      useLocationBtn.disabled = false;
+      setStatus(msg);
+    });
+  });
+}
+
+/* ── Multi-reading GPS: keep watching, keep the most accurate fix ── */
+const GOOD_ACCURACY = 50;        /* metres */
+const ACCEPTABLE_ACCURACY = 100; /* metres */
+const MAX_LOCATION_WAIT = 20000; /* ms */
+
+function acquireBestLocation(onResult, onFailure) {
+  let best = null;
+  let watcherId = null;
+  let finished = false;
+  let settleTimer = null;
+
+  function classify(acc) {
+    if (acc <= GOOD_ACCURACY) return 'good';
+    if (acc <= ACCEPTABLE_ACCURACY) return 'acceptable';
+    return 'poor';
+  }
+
+  function finalize() {
+    if (finished) return;
+    finished = true;
+    if (settleTimer) clearTimeout(settleTimer);
+    if (watcherId !== null) navigator.geolocation.clearWatch(watcherId);
+    if (best) onResult(best);
+    else onFailure('Could not get your location. Please try again or enter your address manually.');
+  }
+
+  function handlePosition(position) {
+    const lat = position.coords.latitude;
+    const lng = position.coords.longitude;
+    const accuracy = position.coords.accuracy;
+
+    /* Never replace a good fix with an equal-or-worse one. */
+    if (best && accuracy >= best.accuracy) {
+      if (classify(best.accuracy) === 'poor') {
+        setStatus('Getting a more accurate location... (best so far: ±' + Math.round(best.accuracy) + ' m)');
+      }
+      return;
+    }
+
+    best = { lat: lat, lng: lng, accuracy: accuracy };
+    const cls = classify(accuracy);
+    if (cls === 'good') { finalize(); return; }
+    if (cls === 'acceptable') {
+      setStatus('Location found (±' + Math.round(accuracy) + ' m). Trying to refine it a bit more...');
+      if (settleTimer) clearTimeout(settleTimer);
+      settleTimer = setTimeout(finalize, 3500);
+      return;
+    }
+    setStatus('Getting a more accurate location... (best so far: ±' + Math.round(accuracy) + ' m)');
+  }
+
+  function handleGeoError(error) {
+    if (error.code === error.PERMISSION_DENIED) {
+      if (!finished) {
+        finished = true;
+        if (settleTimer) clearTimeout(settleTimer);
+        if (watcherId !== null) navigator.geolocation.clearWatch(watcherId);
+        onFailure('Location permission denied. Please allow location access in your browser settings and try again.');
+      }
+      return;
+    }
+    if (best) {
+      setStatus('Getting a more accurate location... (best so far: ±' + Math.round(best.accuracy) + ' m)');
+      return;
+    }
+    if (error.code === error.TIMEOUT) {
+      setStatus('Getting your location... (still searching)');
+      return;
+    }
+    setStatus('Location unavailable. Make sure GPS/location services are turned on, then try again.');
+  }
+
+  setStatus('Getting your location...');
+  watcherId = navigator.geolocation.watchPosition(handlePosition, handleGeoError, {
+    enableHighAccuracy: true,
+    maximumAge: 0,
+    timeout: 15000
+  });
+  setTimeout(finalize, MAX_LOCATION_WAIT);
+}
+
+/* ── Saved addresses: fill form / save / delete ── */
+const savedAddressesData = JSON.parse(document.getElementById('savedAddressesData').textContent);
+const saveAddrWrap = document.getElementById('saveAddrWrap');
+const saveAddressChk = document.getElementById('saveAddress');
+const addrLabelWrap = document.getElementById('addrLabelWrap');
+const saveAddrStatus = document.getElementById('saveAddrStatus');
+const deleteAddrBtns = document.querySelectorAll('.delete-addr-btn');
+
+let justSavedAddressId = null;
+
+saveAddressChk.addEventListener('change', function() {
+  addrLabelWrap.style.display = this.checked ? 'block' : 'none';
+  if (!this.checked) {
+    saveAddrStatus.style.display = 'none';
+    return;
+  }
+  const missing = missingAddressFields();
+  if (missing.length) {
+    saveAddressChk.checked = false;
+    addrLabelWrap.style.display = 'none';
+    premiumAlert('Please fill in: ' + missing.join(', ') + ' first, then tick "Save this address for next time".', { title: 'Missing Details', confirmIcon: 'fa-exclamation-circle' });
+    return;
+  }
+  const params = new URLSearchParams({
+    address: addressInput.value.trim(),
+    pincode: pincodeInput.value.trim(),
+    locality: localityInput.value.trim(),
+    landmark: landmarkInput.value.trim(),
+    phone: phoneInput.value.trim(),
+    latitude: document.getElementById('latitude').value,
+    longitude: document.getElementById('longitude').value,
+    label: document.getElementById('addressLabel').value.trim()
+  });
+  fetch("{% url 'add_address' %}", {
+    method: 'POST',
+    headers: { 'X-CSRFToken': csrfToken },
+    body: params
+  })
+  .then(r => r.json())
+  .then(function(d) {
+    if (d.error) {
+      premiumAlert(d.error, { title: 'Save Failed', confirmIcon: 'fa-exclamation-circle' });
+      saveAddressChk.checked = false;
+      addrLabelWrap.style.display = 'none';
+      return;
+    }
+    justSavedAddressId = d.id;
+    saveAddrStatus.textContent = '✓ Address saved';
+    saveAddrStatus.style.display = 'block';
+  })
+  .catch(function() {
+    premiumAlert('Could not save the address. Please try again.', { title: 'Save Failed', confirmIcon: 'fa-exclamation-circle' });
+    saveAddressChk.checked = false;
+    addrLabelWrap.style.display = 'none';
+  });
+});
+
+function clearSavedAddressFill() {
+  pincodeInput.value = '';
+  localityInput.value = '';
+  addressInput.value = '';
+  landmarkInput.value = '';
+  phoneInput.value = '';
+  document.getElementById('latitude').value = '';
+  document.getElementById('longitude').value = '';
+  selectedCoords.textContent = '—';
+  locationStatus.style.display = 'none';
+  document.getElementById('locWarn').style.display = 'none';
+  mapContainer.style.display = 'none';
+  saveAddressChk.checked = false;
+  addrLabelWrap.style.display = 'none';
+  saveAddrWrap.style.display = 'block';
+}
+
+let activeAddressId = null;
+
+function fillSavedAddress(radio) {
+  const addr = savedAddressesData.find(function(a) { return a.id === parseInt(radio.value, 10); });
+  if (!addr) return;
+  pincodeInput.value = addr.pincode;
+  document.getElementById('pincodeNote').style.display = 'none';
+  localityInput.value = addr.locality;
+  addressInput.value = addr.address;
+  landmarkInput.value = addr.landmark;
+  phoneInput.value = addr.phone;
+  document.getElementById('latitude').value = addr.latitude || '';
+  document.getElementById('longitude').value = addr.longitude || '';
+  selectedCoords.textContent = (addr.latitude && addr.longitude) ? addr.latitude.toFixed(5) + ', ' + addr.longitude.toFixed(5) : '—';
+  document.getElementById('locWarn').style.display = 'none';
+  saveAddressChk.checked = false;
+  addrLabelWrap.style.display = 'none';
+  saveAddrWrap.style.display = 'none';
+  locationStatus.style.display = 'none';
+  mapContainer.style.display = 'none';
+  const missing = missingAddressFields();
+  if (missing.length) {
+    premiumAlert('This saved address is missing: ' + missing.join(', ') + '. Please fill them to continue.', { title: 'Incomplete Address', confirmIcon: 'fa-exclamation-circle' });
+    const firstMissing = { 'Pincode': pincodeInput, 'Locality / Area': localityInput, 'Address': addressInput, 'Phone Number': phoneInput }[missing[0]];
+    if (firstMissing) firstMissing.focus();
+  }
+}
+
+document.querySelectorAll('.saved-addr-radio').forEach(function(radio) {
+  const label = radio.closest('.saved-addr-item').querySelector('label');
+  label.addEventListener('mousedown', function(e) {
+    e.preventDefault();
+    if (activeAddressId === parseInt(radio.value, 10)) {
+      radio.checked = false;
+      activeAddressId = null;
+      clearSavedAddressFill();
+    } else {
+      document.querySelectorAll('.saved-addr-radio').forEach(function(r) { r.checked = false; });
+      radio.checked = true;
+      activeAddressId = parseInt(radio.value, 10);
+      fillSavedAddress(radio);
+    }
+  });
+  radio.addEventListener('click', function(e) {
+    e.preventDefault();
+  });
+  radio.addEventListener('change', function() {
+    if (this.checked) {
+      activeAddressId = parseInt(this.value, 10);
+      fillSavedAddress(this);
+    } else if (activeAddressId === parseInt(this.value, 10)) {
+      activeAddressId = null;
+    }
+  });
+});
+
+[pincodeInput, localityInput, addressInput, landmarkInput, phoneInput].forEach(function(inp) {
+  inp.addEventListener('input', function() {
+    document.querySelectorAll('.saved-addr-radio').forEach(function(r) { r.checked = false; });
+    activeAddressId = null;
+    saveAddrWrap.style.display = 'block';
+    justSavedAddressId = null;
+    saveAddrStatus.style.display = 'none';
+  });
+});
+
+deleteAddrBtns.forEach(function(btn) {
+  btn.addEventListener('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    premiumConfirm({
+      title: 'Delete Saved Address?',
+      message: 'This saved address will be removed from your account. This action cannot be undone.',
+      confirmText: 'Delete',
+      confirmIcon: 'fa-trash'
+    }).then(function(ok) {
+      if (!ok) return;
+      fetch("{% url 'delete_address' %}", {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrfToken },
+        body: new URLSearchParams({ address_id: btn.dataset.id })
+      })
+      .then(r => r.json())
+      .then(function(d) {
+        if (d.error) { premiumAlert(d.error, { title: 'Delete Failed', confirmIcon: 'fa-exclamation-circle' }); return; }
+        const item = btn.closest('.saved-addr-item');
+        const list = document.getElementById('saved-address-list');
+        item.remove();
+        if (!list.querySelector('.saved-addr-item')) {
+          document.getElementById('saved-addresses-wrap').style.display = 'none';
+        }
+      })
+      .catch(function() { premiumAlert('Network error. Please try again.', { title: 'Network Error', confirmIcon: 'fa-exclamation-circle' }); });
+    });
+  });
+});
+</script>
+
+
+{% endblock %}

@@ -1,0 +1,420 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <title>{% block title %}{% endblock title %}</title>
+
+    <style>
+      /* ── Base ── */
+      *, *::before, *::after { box-sizing: border-box; }
+
+      body {
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        background: #faf9f6;
+        color: #1a1a1a;
+        margin: 0;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ── Scrollbar ── */
+      ::-webkit-scrollbar { width: 6px; }
+      ::-webkit-scrollbar-track { background: #f3f1eb; }
+      ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+      ::-webkit-scrollbar-thumb:hover { background: #aaa; }
+
+      /* ── Links ── */
+      a { color: inherit; }
+      a:hover { color: inherit; }
+
+      /* ── Selection ── */
+      ::selection { background: #2C2C2A; color: #FAC775; }
+
+      /* ── Smooth scroll ── */
+      html { scroll-behavior: smooth; }
+
+      /* ── Fixed navbar offset ── */
+      body { padding-top: 62px; animation: pageFade .3s ease; font-variant: small-caps; }
+      input, textarea, select, button { font-variant: normal; }
+      @keyframes pageFade { from { opacity: 0; } to { opacity: 1; } }
+
+      /* ── Search-result highlight (cart/fav/order anchor) ── */
+      @keyframes itemFlash {
+        0%   { box-shadow: 0 0 0 3px #3C3489; background: #f4f2fd; }
+        100% { box-shadow: 0 0 0 3px rgba(60,52,137,0); background: #fff; }
+      }
+      .item-highlight {
+        animation: itemFlash 1.2s ease 2;
+        border-radius: 16px;
+      }
+
+      /* ── Bootstrap overrides ── */
+      .btn { border-radius: 10px; font-size: 13px; font-weight: 500; }
+      .btn-primary {
+        background: #2C2C2A;
+        border-color: #2C2C2A;
+        color: #F1EFE8;
+      }
+      .btn-primary:hover, .btn-primary:focus {
+        background: #444441;
+        border-color: #444441;
+        color: #F1EFE8;
+      }
+      .btn-secondary {
+        background: transparent;
+        border: 1px solid #ccc;
+        color: #1a1a1a;
+      }
+      .btn-secondary:hover, .btn-secondary:focus {
+        background: #f0ede6;
+        border-color: #bbb;
+        color: #1a1a1a;
+      }
+      .card {
+        border: 1px solid #ece9e1;
+        border-radius: 16px;
+      }
+      .breadcrumb-item + .breadcrumb-item::before { color: #ccc; }
+      .breadcrumb-item a { color: #999; text-decoration: none; }
+      .breadcrumb-item a:hover { color: #1a1a1a; }
+      .breadcrumb-item.active { color: #1a1a1a; }
+      hr { border-color: #e8e5dc; opacity: 1; }
+
+      /* ── Utility ── */
+      .text-premium { color: #1a1a1a; }
+      .text-muted { color: #aaa !important; }
+      .bg-light { background: #faf9f6 !important; }
+      .bg-white { background: #fff !important; }
+
+      /* ── Alert / messages ── */
+      .alert {
+        border-radius: 12px;
+        border: 1px solid transparent;
+        font-size: 13px;
+      }
+      .alert-success { background: #EAF3DE; border-color: #C0DD97; color: #27500A; }
+      .alert-danger  { background: #FCEBEB; border-color: #F7C1C1; color: #791F1F; }
+      .alert-info    { background: #E6F1FB; border-color: #B5D4F4; color: #0C447C; }
+      .alert-warning { background: #FAEEDA; border-color: #FAC775; color: #633806; }
+
+      /* ── Form controls ── */
+      .form-control, .form-select {
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        font-size: 13px;
+        color: #1a1a1a;
+        background: #fff;
+        padding: 10px 14px;
+        transition: border-color .15s, box-shadow .15s;
+      }
+      .form-control:focus, .form-select:focus {
+        border-color: #2C2C2A;
+        box-shadow: 0 0 0 3px rgba(44,44,42,.08);
+        outline: none;
+      }
+      label { font-size: 12px; font-weight: 600; color: #888; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 6px; }
+
+      /* ── Premium confirm modal ── */
+      .premium-confirm-overlay {
+        position: fixed; inset: 0; z-index: 100000;
+        display: flex; align-items: center; justify-content: center;
+        padding: 20px; background: rgba(14,10,28,.55);
+        opacity: 0; visibility: hidden;
+        transition: opacity .25s ease, visibility .25s ease;
+        -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+      }
+      .premium-confirm-overlay.show { opacity: 1; visibility: visible; }
+      .premium-confirm-card {
+        width: 100%; max-width: 400px; background: #fff; border-radius: 20px;
+        padding: 30px 26px 24px; text-align: center; position: relative;
+        font-variant: normal;
+        box-shadow: 0 24px 60px rgba(10,6,30,.35), 0 0 0 1px rgba(212,175,55,.22);
+        transform: translateY(16px) scale(.96);
+        transition: transform .28s cubic-bezier(.34,1.4,.64,1);
+      }
+      .premium-confirm-overlay.show .premium-confirm-card { transform: translateY(0) scale(1); }
+      .premium-confirm-icon {
+        width: 66px; height: 66px; margin: 0 auto 16px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        background: linear-gradient(135deg,#ff5f6d,#d90429); color: #fff; font-size: 25px;
+        box-shadow: 0 10px 24px rgba(217,4,41,.35), 0 0 0 8px rgba(217,4,41,.10);
+      }
+      .premium-confirm-title {
+        font-size: 17px; font-weight: 800; color: #171136; margin: 0 0 8px;
+        font-variant: normal; letter-spacing: 0;
+      }
+      .premium-confirm-msg {
+        font-size: 13px; color: #777; margin: 0 0 22px; line-height: 1.55;
+        font-variant: normal; letter-spacing: 0;
+      }
+      .premium-confirm-actions { display: flex; gap: 10px; }
+      .premium-confirm-cancel, .premium-confirm-ok {
+        flex: 1; border-radius: 12px; padding: 11px 14px; font-size: 13px;
+        font-weight: 700; cursor: pointer; border: none; font-variant: normal; letter-spacing: 0;
+        transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+      }
+      .premium-confirm-cancel { background: #f1eef8; color: #3C3489; }
+      .premium-confirm-cancel:hover { background: #e7e2f4; }
+      .premium-confirm-ok {
+        background: linear-gradient(135deg,#ff5f6d,#d90429); color: #fff;
+        box-shadow: 0 8px 18px rgba(217,4,41,.30);
+      }
+      .premium-confirm-ok:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(217,4,41,.42); }
+
+      /* ── Flipkart-style product card ── */
+      .fk-card {
+        border: 0.5px solid rgba(0,0,0,0.08);
+        border-radius: 10px;
+        background: #fff;
+        overflow: hidden;
+        height: 100%;
+        transition: transform .15s, box-shadow .15s;
+      }
+      .fk-card:hover {
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        transform: translateY(-2px);
+      }
+      .fk-img {
+        background: #fff;
+        padding: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .fk-img img {
+        width: 100%;
+        height: 200px;
+        object-fit: contain;
+        display: block;
+      }
+      .fk-body { padding: 8px 10px 12px; }
+      .fk-cat {
+        font-size: 10px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: #999;
+        margin: 0 0 3px;
+      }
+      .fk-title {
+        font-size: 13px;
+        font-weight: 500;
+        color: #212121;
+        margin: 0 0 6px;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        min-height: 34px;
+      }
+      .fk-price {
+        font-size: 15px;
+        font-weight: 700;
+        color: #212121;
+      }
+      .fk-meta {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 2px;
+      }
+      .fk-mrp {
+        font-size: 12px;
+        color: #878787;
+        text-decoration: line-through;
+      }
+      .fk-discount {
+        font-size: 12px;
+        color: #26a541;
+        font-weight: 600;
+      }
+      .fk-rating {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin: 6px 0 2px;
+        background: #F6F6F6;
+        border: 1px solid #eee;
+        border-radius: 6px;
+        padding: 2px 8px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #388E3C;
+        line-height: 1.4;
+        cursor: pointer;
+        transition: background 0.2s ease, box-shadow 0.2s ease;
+      }
+      .fk-rating:hover { background: #EEF2FF; box-shadow: 0 2px 6px rgba(60, 52, 137, 0.12); }
+      .fk-rating i { color: #F5A623; font-size: 11px; }
+      .fk-rating small { font-weight: 500; color: #888; margin-left: 1px; }
+
+      /* ── Responsive helpers ── */
+      @media (max-width: 991px) {
+        .navbar .navbar-nav { gap: 4px !important; padding: 12px 0; }
+        .navbar .navbar-nav a { padding: 8px 12px !important; }
+        .carousel-item img { height: 30vh !important; }
+
+        /* ── Colored image backdrop on product cards (mobile/tablet) ── */
+        .fk-img {
+          background: linear-gradient(150deg, #e8eefc 0%, #dbe5f8 100%) !important;
+          padding: 14px !important;
+        }
+        .product-card img {
+          background: linear-gradient(150deg, #e8eefc 0%, #dbe5f8 100%) !important;
+          padding: 14px !important;
+        }
+      }
+      @media (max-width: 575px) {
+        .carousel-item img { height: 22vh !important; }
+        .card .card-img-top { height: 150px !important; }
+        .cat-card-img { height: 110px !important; }
+        .hero-title { font-size: 28px !important; }
+
+        /* ── Flipkart-style mobile product cards ── */
+        .fk-img img { height: 150px !important; }
+        .fk-title { font-size: 12px !important; min-height: 32px; }
+        .fk-price { font-size: 14px !important; }
+        .fk-mrp { font-size: 11px !important; }
+        .fk-discount { font-size: 11px !important; }
+
+        .product-card img {
+          height: 150px !important;
+        }
+        .product-card .card-body { padding: 0 8px 10px; }
+        .product-card .card-title {
+          font-size: 12px !important;
+          font-weight: 500;
+          color: #212121;
+          white-space: normal !important;
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          min-height: 32px;
+        }
+        .product-card .current-price { font-size: 14px !important; font-weight: 700; color: #212121 !important; }
+        .product-card .old-price { font-size: 11px !important; color: #999 !important; }
+        .product-card .discount { font-size: 11px !important; color: #26a541 !important; font-weight: 600; }
+      }
+    </style>
+  </head>
+
+  <body>
+    {% include 'shop/inc/navbar.html' %}
+
+    <!-- Premium confirm modal -->
+    <div id="premiumConfirmModal" class="premium-confirm-overlay" aria-hidden="true">
+      <div class="premium-confirm-card" role="alertdialog" aria-modal="true" aria-labelledby="premiumConfirmTitle">
+        <div class="premium-confirm-icon"><i class="fa fa-trash"></i></div>
+        <h5 class="premium-confirm-title" id="premiumConfirmTitle">Delete Saved Address?</h5>
+        <p class="premium-confirm-msg" id="premiumConfirmMsg">This saved address will be removed from your account. This action cannot be undone.</p>
+        <div class="premium-confirm-actions">
+          <button type="button" class="premium-confirm-cancel" data-result="cancel">Cancel</button>
+          <button type="button" class="premium-confirm-ok" data-result="confirm">Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+    (function() {
+      var modal = document.getElementById('premiumConfirmModal');
+      var titleEl = document.getElementById('premiumConfirmTitle');
+      var msgEl = document.getElementById('premiumConfirmMsg');
+      var okBtn = modal.querySelector('.premium-confirm-ok');
+      var cancelBtn = modal.querySelector('.premium-confirm-cancel');
+      var iconEl = modal.querySelector('.premium-confirm-icon');
+      var resolver = null;
+
+      function close(result) {
+        modal.classList.remove('show');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        if (resolver) { var r = resolver; resolver = null; r(result); }
+      }
+      cancelBtn.addEventListener('click', function() { close(false); });
+      okBtn.addEventListener('click', function() { close(true); });
+      modal.addEventListener('click', function(e) { if (e.target === modal) close(false); });
+      document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && modal.classList.contains('show')) close(false); });
+
+      window.premiumConfirm = function(opts) {
+        opts = opts || {};
+        titleEl.textContent = opts.title || 'Are you sure?';
+        msgEl.textContent = opts.message || 'This action cannot be undone.';
+        okBtn.textContent = opts.confirmText || 'Confirm';
+        cancelBtn.style.display = opts.alertOnly ? 'none' : '';
+        if (opts.confirmIcon) iconEl.innerHTML = '<i class="fa ' + opts.confirmIcon + '"></i>';
+        modal.classList.add('show');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        okBtn.focus();
+        return new Promise(function(resolve) { resolver = resolve; });
+      };
+
+      window.premiumConfirmAction = function(message, el, opts) {
+        opts = opts || {};
+        premiumConfirm({
+          title: opts.title || 'Are you sure?',
+          message: message,
+          confirmText: opts.confirmText || 'Confirm',
+          confirmIcon: opts.confirmIcon || 'fa-check-circle'
+        }).then(function(ok) {
+          if (ok && el) window.location.href = el.href;
+        });
+        return false;
+      };
+
+      window.premiumAlert = function(message, opts) {
+        opts = opts || {};
+        return premiumConfirm({
+          title: opts.title || 'Notice',
+          message: message,
+          confirmText: opts.confirmText || 'OK',
+          confirmIcon: opts.confirmIcon || 'fa-info-circle',
+          alertOnly: true
+        });
+      };
+    })();
+    </script>
+
+    {% block content %}
+    {% endblock content %}
+
+    <script>
+    (function() {
+      function targetId() {
+        var m = window.location.hash.match(/^#(cart|fav|order)-\d+/);
+        return m ? m[0].slice(1) : null;
+      }
+      function go() {
+        var id = targetId();
+        var el = id ? document.getElementById(id) : null;
+        if (!el) return;
+        var rect = el.getBoundingClientRect();
+        var top = rect.top + window.pageYOffset - window.innerHeight / 2 + rect.height / 2;
+        window.scrollTo({ top: top, behavior: 'smooth' });
+        el.classList.add('item-highlight');
+        if (window.history && window.history.replaceState) {
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+      }
+      window.addEventListener('hashchange', go);
+      if (document.readyState === 'complete') {
+        go();
+      } else {
+        window.addEventListener('load', go);
+      }
+    })();
+    </script>
+
+    {% block scripts %}
+    {% endblock scripts %}
+
+    {% if not request.user.is_staff %}
+    {% include 'shop/inc/footer.html' %}
+    {% endif %}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+  </body>
+</html>

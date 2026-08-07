@@ -1,0 +1,23 @@
+{% extends 'shop/layouts/main.html' %}
+{% load static %}
+{% block title %}Payment Cancelled | KaviBazaar{% endblock %}
+{% block content %}
+<div class="container" style="min-height:500px;padding-bottom:90px;">
+  <div class="row justify-content-center">
+    <div class="col-md-6 text-center">
+      <div style="font-size:72px;color:#ffc107;margin-bottom:20px;">
+        <i class="fa fa-exclamation-circle"></i>
+      </div>
+      <h2 style="font-weight:700;color:#1a1a1a;">Payment Cancelled</h2>
+      <p style="color:#888;font-size:14px;margin:16px 0;">
+        You cancelled the payment.
+      </p>
+      <p style="font-size:12px;color:#bbb;">Your items are still saved. You can try paying again.</p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <a href="{% url 'cart' %}" class="btn btn-primary">Go to Cart</a>
+        <a href="{% url 'my_orders' %}" class="btn btn-secondary">My Orders</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

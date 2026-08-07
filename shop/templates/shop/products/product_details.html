@@ -1,0 +1,2151 @@
+{% extends 'shop/layouts/main.html' %}
+{% load static %}
+{% load user_filters %}
+
+{% block title %}
+KaviBazaar | {{ products }}
+{% endblock title %}
+
+{% block content %}
+
+<style>
+  .pdp-section {
+    background: linear-gradient(180deg, #f6f4ff 0%, #faf9f6 100%);
+    min-height: auto;
+    padding: 64px 0 24px;
+  }
+  .pdp-breadcrumb {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 12px;
+    color: #999;
+    margin-bottom: 24px;
+  }
+  .pdp-breadcrumb a { color: #999; text-decoration: none; transition: color .15s; }
+  .pdp-breadcrumb a:hover { color: #3C3489; }
+  .pdp-breadcrumb .sep { font-size: 10px; }
+  .pdp-breadcrumb .cur { color: #3C3489; font-weight: 600; }
+
+  /* Image card */
+  .pdp-image-card {
+    background: #fff;
+    border-radius: 24px;
+    padding: 76px 24px 24px;
+    box-shadow: 0 20px 50px rgba(60, 52, 137, 0.10);
+    border: 1px solid rgba(60, 52, 137, 0.06);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 420px;
+  }
+  .pdp-image-card img {
+    width: 100%;
+    max-height: 320px;
+    object-fit: contain;
+    border-radius: 12px;
+  }
+  .pdp-rating-badge {
+    position: absolute;
+    left: 16px;
+    bottom: 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 30px;
+    background: rgba(23, 17, 54, 0.82);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 6px 16px rgba(23, 17, 54, 0.25);
+    z-index: 2;
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.2s ease;
+  }
+  .pdp-rating-badge:hover {
+    transform: translateY(-1px);
+    background: rgba(23, 17, 54, 0.95);
+  }
+  .pdp-rating-badge i { color: #F5C76F; }
+  .pdp-rating-badge small { font-weight: 500; color: rgba(255, 255, 255, 0.78); margin-left: 2px; }
+  .pdp-thumbs-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .pdp-thumb-scroll {
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 1px solid #e2e0ee; background: #fff; color: #3C3489;
+    display: none; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 12px; flex-shrink: 0;
+    transition: all .15s; box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  }
+  .pdp-thumb-scroll:hover { border-color: #3C3489; background: #f4f3fb; }
+  @media (min-width: 768px) {
+    .pdp-thumb-scroll { display: flex; }
+  }
+  .pdp-thumbs-wrap.is-single .pdp-thumb-scroll { display: none !important; }
+  .pdp-thumbs {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    gap: 10px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 6px;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .pdp-thumbs::-webkit-scrollbar { display: none; }
+  .pdp-thumb {
+    width: 64px; height: 64px; object-fit: contain;
+    border: 2px solid #e2e0ee; border-radius: 10px; background: #fff;
+    cursor: pointer; padding: 4px; transition: border-color .15s, box-shadow .15s;
+  }
+  .pdp-thumb:hover { border-color: #3C3489; }
+  .pdp-thumb.active { border-color: #3C3489; box-shadow: 0 0 0 3px rgba(60,52,137,.15); }
+  .pdp-badge {
+    position: absolute; top: 18px; left: 18px;
+    background: linear-gradient(135deg, #3C3489, #6B5BD6);
+    color: #fff;
+    font-size: 11px; font-weight: 700; letter-spacing: .06em;
+    padding: 6px 14px; border-radius: 30px;
+    box-shadow: 0 4px 12px rgba(60,52,137,.35);
+  }
+  .pdp-fav {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: #fff;
+    border: 1px solid #eee;
+    color: #bbb;
+    font-size: 17px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    transition: all .2s;
+  }
+  .pdp-fav:hover { color: #dc3545; border-color: #dc3545; }
+  .pdp-fav.fav-active {
+    background: linear-gradient(135deg, #dc3545, #ff6b81);
+    border-color: transparent;
+    color: #fff;
+  }
+  .pdp-share {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: #fff;
+    border: 1px solid #eee;
+    color: #3C3489;
+    font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    transition: all .2s;
+  }
+  .pdp-share:hover { border-color: #3C3489; background: #f4f3fb; }
+  .pdp-share.open {
+    background: linear-gradient(135deg, #3C3489, #6B5BD6);
+    border-color: transparent;
+    color: #fff;
+  }
+  .pdp-topbar {
+    position: absolute; top: 16px; right: 16px;
+    display: flex; align-items: center; gap: 8px; z-index: 5;
+  }
+  .pdp-share-wrap { position: relative; }
+  .pdp-share-icons {
+    position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+    display: none; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .pdp-share-icons.show { display: flex; animation: shareIn .18s ease; }
+  @keyframes shareIn {
+    from { opacity: 0; transform: translate(-50%, -10px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+  }
+  .pdp-share-icons .share-btn { width: 34px; height: 34px; font-size: 13px; }
+  .pdp-share-icons .share-copy { width: 34px; padding: 0; justify-content: center; margin-top: 8px; }
+
+  /* Info */
+  .pdp-vendor {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .14em;
+    color: #8b84c8;
+    margin-bottom: 6px;
+  }
+  .pdp-title {
+    font-size: 30px;
+    font-weight: 800;
+    color: #1a1a1a;
+    line-height: 1.25;
+    margin-bottom: 14px;
+    letter-spacing: -0.02em;
+  }
+  .pdp-underline {
+    width: 56px; height: 4px;
+    background: linear-gradient(90deg, #3C3489, #FAC775);
+    border-radius: 4px;
+    margin-bottom: 16px;
+  }
+  .pdp-desc {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.7;
+    margin-bottom: 18px;
+  }
+  .pdp-stock {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 600; color: #1e7a3c;
+    background: #EAF6EE; border: 1px solid #C9E8D4;
+    padding: 5px 14px; border-radius: 30px; margin-bottom: 20px;
+  }
+  .pdp-stock svg { flex-shrink: 0; }
+
+  /* Price panel */
+  .pdp-price-panel {
+    background: #fff;
+    border-radius: 20px;
+    padding: 22px 24px;
+    margin: 6px 0 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    border: 1px solid rgba(0,0,0,0.04);
+    position: relative;
+    overflow: hidden;
+  }
+  .pdp-price-panel::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #3C3489, #6B5BD6, #FAC775);
+  }
+  .pdp-price-row { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+  .pdp-price-now { font-size: 34px; font-weight: 800; color: #1a1a1a; letter-spacing: -0.02em; }
+  .pdp-price-mrp { font-size: 16px; color: #aaa; text-decoration: line-through; }
+  .pdp-price-off {
+    font-size: 13px; font-weight: 700; color: #26a541;
+    background: #EAF6EE; padding: 3px 10px; border-radius: 20px;
+  }
+  .pdp-save {
+    font-size: 13px; color: #26a541; font-weight: 600; margin-top: 8px;
+  }
+  .pdp-tax { font-size: 12px; color: #999; margin-top: 4px; }
+
+  /* Highlights */
+  .pdp-highlights { margin: 4px 0 20px; }
+  .pdp-hl-title {
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .1em; color: #888; margin-bottom: 10px;
+  }
+  .pdp-hl {
+    display: flex; gap: 10px; align-items: flex-start;
+    font-size: 13px; color: #555; line-height: 1.6; margin-bottom: 7px;
+  }
+  .pdp-hl i { color: #3C3489; margin-top: 3px; font-size: 12px; }
+
+  /* ── Quantity sheet (opened from Add to Cart / Buy Now) ── */
+  .qty-sheet-overlay {
+    position: fixed; inset: 0; z-index: 100000;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px; background: rgba(14,10,28,.55);
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    opacity: 0; visibility: hidden;
+    transition: opacity .25s ease, visibility .25s ease;
+  }
+  .qty-sheet-overlay.show { opacity: 1; visibility: visible; }
+  .qty-sheet-card {
+    width: 100%; max-width: 400px; background: #fff; border-radius: 20px;
+    padding: 26px 24px 22px; text-align: center; position: relative;
+    box-shadow: 0 24px 60px rgba(10,6,30,.35);
+    transform: translateY(16px) scale(.96);
+    transition: transform .28s cubic-bezier(.34,1.4,.64,1);
+  }
+  .qty-sheet-overlay.show .qty-sheet-card { transform: translateY(0) scale(1); }
+  .qty-sheet-title {
+    font-size: 17px; font-weight: 800; color: #171136; margin: 0 0 6px;
+  }
+  .qty-sheet-sub {
+    font-size: 13px; color: #777; margin: 0; line-height: 1.5;
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+  .qty-sheet-stock {
+    font-size: 12px; font-weight: 700; color: #1e7a3c;
+    background: #EAF6EE; border: 1px solid #C9E8D4;
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 12px; border-radius: 30px; margin: 12px 0 0;
+  }
+  .qty-sheet-stock i { color: #1e7a3c; }
+  .qty-sheet-price {
+    font-size: 20px; font-weight: 800; color: #1a1a1a; margin-top: 8px;
+  }
+  .qty-sheet-stepper {
+    display: inline-flex; align-items: center; margin: 14px 0 2px;
+    border: 1px solid #e2e0ee; border-radius: 14px; overflow: hidden;
+  }
+  .qty-sheet-btn {
+    width: 54px; height: 54px; background: #f4f3fb; border: none;
+    color: #3C3489; font-size: 24px; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; padding: 0;
+    transition: background .12s;
+  }
+  .qty-sheet-btn:hover { background: #e9e6f8; }
+  .qty-sheet-btn:disabled { opacity: .35; cursor: not-allowed; background: #f7f6fb; }
+  .qty-sheet-input {
+    width: 60px; height: 54px; text-align: center; font-size: 18px; font-weight: 700;
+    color: #1a1a1a; border: none; border-left: 1px solid #e2e0ee; border-right: 1px solid #e2e0ee;
+    background: #fff; outline: none; padding: 0;
+  }
+  .qty-sheet-actions { display: flex; gap: 10px; margin-top: 18px; }
+  .qty-sheet-cancel, .qty-sheet-confirm {
+    flex: 1; border-radius: 12px; padding: 12px 14px; font-size: 13px;
+    font-weight: 700; cursor: pointer; border: none; letter-spacing: .04em;
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .qty-sheet-cancel { background: #f1eef8; color: #3C3489; }
+  .qty-sheet-cancel:hover { background: #e7e2f4; }
+  .qty-sheet-confirm {
+    background: linear-gradient(135deg, #3C3489, #6B5BD6); color: #fff;
+    box-shadow: 0 8px 18px rgba(60,52,137,.32);
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+  }
+  .qty-sheet-confirm:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(60,52,137,.45); }
+  .qty-sheet-cancel:active, .qty-sheet-confirm:active { transform: scale(.97); }
+  .qty-sheet-confirm.is-buy {
+    background: linear-gradient(135deg, #1a1a1a, #3a3a3a); color: #FAC775;
+    box-shadow: 0 8px 18px rgba(0,0,0,.22);
+  }
+  @media (max-width: 575px) {
+    .qty-sheet-overlay { align-items: flex-end; padding: 0; }
+    .qty-sheet-card {
+      max-width: 100%; border-radius: 22px 22px 0 0;
+      padding: 14px 20px calc(20px + env(safe-area-inset-bottom));
+      transform: translateY(100%);
+    }
+    .qty-sheet-overlay.show .qty-sheet-card { transform: translateY(0); }
+    .qty-sheet-grip {
+      width: 44px; height: 4px; border-radius: 4px; background: #e2e0ee;
+      margin: 0 auto 16px;
+    }
+  }
+
+  /* Buttons */
+  .pdp-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+  .pdp-btn-cart, .pdp-btn-buy {
+    height: 50px; border: none; border-radius: 14px;
+    font-size: 14px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 9px;
+    padding: 0 30px; min-width: 200px; transition: transform .12s, box-shadow .12s, opacity .12s;
+  }
+  .pdp-btn-cart {
+    background: linear-gradient(135deg, #3C3489, #6B5BD6);
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(60,52,137,.32);
+  }
+  .pdp-btn-buy {
+    background: linear-gradient(135deg, #1a1a1a, #3a3a3a);
+    color: #FAC775;
+    box-shadow: 0 8px 20px rgba(0,0,0,.18);
+  }
+  .pdp-btn-cart:hover, .pdp-btn-buy:hover { transform: translateY(-2px); }
+  .pdp-btn-cart:active, .pdp-btn-buy:active { transform: scale(.98); }
+
+  /* Perks */
+  .pdp-perks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .pdp-perk {
+    background: #fff; border: 1px solid rgba(60,52,137,.08); border-radius: 16px;
+    padding: 14px; text-align: center; box-shadow: 0 6px 18px rgba(0,0,0,0.04);
+  }
+  .pdp-perk-icon {
+    width: 40px; height: 40px; margin: 0 auto 8px;
+    border-radius: 12px; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #f0eefb, #faf7ef);
+    color: #3C3489; font-size: 16px;
+  }
+  .pdp-perk-title { font-size: 12px; font-weight: 700; color: #1a1a1a; }
+  .pdp-perk-sub { font-size: 11px; color: #999; margin-top: 2px; }
+
+  /* Share */
+  .share-row { margin: 22px 0 8px; }
+  .share-inline { display: flex; align-items: center; gap: 12px; }
+  .share-inline .share-label { margin-bottom: 0; white-space: nowrap; }
+  .share-inline .share-btns { justify-content: flex-start; gap: 10px; }
+  .share-inline .share-btn { width: 38px; height: 38px; font-size: 15px; }
+  .share-inline .share-copy { height: 38px; padding: 0 14px; font-size: 12px; }
+  .share-label {
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .1em; color: #888; margin-bottom: 10px;
+  }
+  .share-btns { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 16px; }
+  .share-btn {
+    width: 42px; height: 42px; border-radius: 50%;
+    border: 1px solid #e2e0ee; background: #fff; color: #3C3489;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 16px; text-decoration: none; cursor: pointer;
+    transition: transform .15s, box-shadow .15s, color .15s, border-color .15s;
+  }
+  .share-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(60,52,137,.18); text-decoration: none; }
+  .share-wa:hover { color: #25D366; border-color: #25D366; }
+  .share-fb:hover { color: #1877F2; border-color: #1877F2; }
+  .share-x:hover { color: #111; border-color: #111; }
+  .share-tg:hover { color: #0088cc; border-color: #0088cc; }
+  .share-mail:hover { color: #EA4335; border-color: #EA4335; }
+  .share-copy {
+    height: 42px; border-radius: 30px; border: 1px solid #e2e0ee;
+    background: #fff; color: #3C3489; font-size: 13px; font-weight: 600;
+    padding: 0 18px; display: inline-flex; align-items: center; gap: 8px;
+    cursor: pointer; transition: all .15s; text-decoration: none;
+  }
+  .share-btns .share-copy {
+    width: 42px; height: 42px; padding: 0; justify-content: center; border-radius: 50%;
+    color: #3C3489; border-color: #e2e0ee; font-size: 18px;
+  }
+  .share-btns .share-copy:hover { background: #3C3489; color: #fff; border-color: #3C3489; }
+  .share-copy:hover { background: #f4f3fb; border-color: #3C3489; }
+
+  /* Toast */
+  .pdp-toast {
+    display: none;
+    background: #1a1a1a; color: #fff; font-size: 13px;
+    padding: 10px 20px; border-radius: 30px; text-align: center; margin-top: 12px;
+    opacity: 0; transition: opacity .25s; pointer-events: none;
+  }
+  .pdp-toast.show { display: inline-block; opacity: 1; }
+
+  @media (max-width: 767px) {
+    .pdp-section { padding: 24px 0 20px; min-height: auto; }
+    .pdp-title { font-size: 22px; }
+    .pdp-image-card { min-height: 280px; padding-top: 64px; }
+    .pdp-image-card img { max-height: 180px; }
+    .pdp-perks {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .pdp-perk { padding: 10px 6px; }
+    .pdp-perk-icon { width: 32px; height: 32px; margin-bottom: 6px; font-size: 13px; }
+    .pdp-perk-title { font-size: 11px; }
+    .pdp-perk-sub { font-size: 10px; }
+    .pdp-btn-cart, .pdp-btn-buy { width: 100%; min-width: 0; }
+    .pdp-topbar { top: 12px; right: 12px; gap: 6px; }
+    .pdp-fav, .pdp-share { width: 36px; height: 36px; font-size: 14px; }
+    .pdp-share-icons .share-btn { width: 28px; height: 28px; font-size: 12px; }
+  }
+
+  /* ── Mobile sticky Add to Cart / Buy Now bar ── */
+  .pdp-sticky-bar {
+    display: none;
+    position: fixed;
+    bottom: 60px; left: 0; right: 0;
+    z-index: 1035;
+    background: #fff;
+    border-top: 1px solid #e9e6f8;
+    box-shadow: 0 -8px 24px rgba(23, 17, 54, 0.16);
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+  }
+  .pdp-sticky-bar .pdp-bar-inner { display: flex; gap: 12px; align-items: center; }
+  .pdp-bar-info { flex: 1; min-width: 0; }
+  .pdp-bar-title {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .08em; color: #888;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .pdp-bar-price { font-size: 16px; font-weight: 800; color: #171136; }
+  .pdp-bar-mrp { font-size: 11px; color: #aaa; text-decoration: line-through; font-weight: 500; margin-left: 6px; }
+  .pdp-bar-btn {
+    border: none; border-radius: 10px;
+    font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+    padding: 12px 16px;
+    display: flex; align-items: center; gap: 6px; justify-content: center;
+    transition: transform .12s;
+  }
+  .pdp-bar-btn:active { transform: scale(.97); }
+  .pdp-bar-cart { background: #fff; color: #3C3489; border: 1.5px solid #3C3489; }
+  .pdp-bar-buy {
+    background: linear-gradient(135deg, #F5C76F, #D4AF37);
+    color: #171136; box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+  }
+
+  @media (max-width: 991.98px) {
+    .pdp-actions { display: none; }
+    .pdp-sticky-bar { display: block; }
+    body { padding-bottom: 124px !important; }
+  }
+</style>
+
+<section class="pdp-section">
+  <div class="container">
+    <div class="row">
+      <div class="col-12">
+        <nav class="pdp-breadcrumb" aria-label="breadcrumb">
+          <a href="{% url 'home' %}">Home</a>
+          <span class="sep">›</span>
+          <a href="{% url 'collections' products.category.name %}">{{ products.category.name }}</a>
+          <span class="sep">›</span>
+          <span class="cur">{{ products }}</span>
+        </nav>
+        {% include 'shop/inc/message.html' %}
+      </div>
+
+      <!-- Image Column -->
+      <div class="col-md-6 col-lg-6 mb-4">
+        <div class="pdp-image-card">
+          {% if products.trending %}
+            <span class="pdp-badge">🔥 Trending</span>
+          {% elif products.original_price > products.selling_price %}
+            <span class="pdp-badge">{{ products.discount_percent }}% OFF</span>
+          {% endif %}
+          <div class="pdp-topbar">
+            <button id="btnFav" class="pdp-fav" title="Add to favourites">
+              <i class="fa fa-heart" id="heartIcon"></i>
+            </button>
+            <div class="pdp-share-wrap">
+              <button id="btnShare" class="pdp-share" title="Share this product">
+                <i class="fa fa-share-alt"></i>
+              </button>
+              <div id="shareIcons" class="pdp-share-icons">
+                <a class="share-btn share-wa" target="_blank" rel="noopener" title="Share on WhatsApp"
+                   href="https://wa.me/?text={{ request.build_absolute_uri|urlencode }}">
+                  <i class="fa fa-whatsapp"></i>
+                </a>
+                <a class="share-btn share-fb" target="_blank" rel="noopener" title="Share on Facebook"
+                   href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri|urlencode }}">
+                  <i class="fa fa-facebook"></i>
+                </a>
+                <a class="share-btn share-x" target="_blank" rel="noopener" title="Share on X"
+                   href="https://twitter.com/intent/tweet?url={{ request.build_absolute_uri|urlencode }}&text={{ products|urlencode }}">
+                  <i class="fa fa-twitter"></i>
+                </a>
+                <a class="share-btn share-tg" target="_blank" rel="noopener" title="Share on Telegram"
+                   href="https://t.me/share/url?url={{ request.build_absolute_uri|urlencode }}&text={{ products|urlencode }}">
+                  <i class="fa fa-telegram"></i>
+                </a>
+                <a class="share-btn share-mail" title="Share via Email"
+                   href="mailto:?subject={{ products|urlencode }}&body={{ request.build_absolute_uri|urlencode }}">
+                  <i class="fa fa-envelope"></i>
+                </a>
+                <button type="button" class="share-btn share-copy" id="btnShareCopy2" title="Copy product link">
+                  <i class="fa fa-link"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          {% if products.product_image %}
+            <img id="mainProductImage" src="{{ products.product_image.url }}" alt="{{ products }}">
+          {% elif products.images.all.0 %}
+            <img id="mainProductImage" src="{{ products.images.all.0.image.url }}" alt="{{ products }}">
+          {% else %}
+            <img id="mainProductImage" src="{% static 'images/no-image.jpg' %}" alt="No Image">
+          {% endif %}
+          {% if rating_count %}
+          <div class="pdp-rating-badge" onclick="openAllReviews()" role="button" tabindex="0" aria-label="Open all reviews">
+            <i class="fa fa-star"></i>
+            {{ avg_rating|floatformat:1 }}
+            <small>({{ rating_count }})</small>
+          </div>
+          {% endif %}
+        </div>
+        {% if products.product_image or products.images.all %}
+        <div class="pdp-thumbs-wrap{% if products.product_image %}{% if not products.images.all %} is-single{% endif %}{% else %}{% if products.images.all|length == 1 %} is-single{% endif %}{% endif %}">
+          <button type="button" class="pdp-thumb-scroll" id="thumbsPrev" title="Scroll left" aria-label="Scroll left">
+            <i class="fa fa-chevron-left"></i>
+          </button>
+          <div class="pdp-thumbs" id="pdpThumbs">
+            {% if products.product_image %}
+            <img src="{{ products.product_image.url }}" class="pdp-thumb active"
+                 data-full="{{ products.product_image.url }}" alt="Cover" onclick="setPdpImage(this)">
+            {% endif %}
+            {% for img in products.images.all %}
+            <img src="{{ img.image.url }}" class="pdp-thumb"
+                 data-full="{{ img.image.url }}" alt="{{ products }} image" onclick="setPdpImage(this)">
+            {% endfor %}
+          </div>
+          <button type="button" class="pdp-thumb-scroll" id="thumbsNext" title="Scroll right" aria-label="Scroll right">
+            <i class="fa fa-chevron-right"></i>
+          </button>
+        </div>
+        {% endif %}
+
+        <div class="d-none d-md-block pdp-left-extras">
+        <div class="pdp-perks">
+            <div class="pdp-perk">
+              <div class="pdp-perk-icon"><i class="fa {{ products.perk_1_icon|default:'fa-truck' }}"></i></div>
+              <div class="pdp-perk-title">{{ products.perk_1_title|default:'Free delivery' }}</div>
+              <div class="pdp-perk-sub">{{ products.perk_1_sub|default:'2–4 business days' }}</div>
+            </div>
+            <div class="pdp-perk">
+              <div class="pdp-perk-icon"><i class="fa {{ products.perk_2_icon|default:'fa-rotate-left' }}"></i></div>
+              <div class="pdp-perk-title">{{ products.perk_2_title|default:'7-day returns' }}</div>
+              <div class="pdp-perk-sub">{{ products.perk_2_sub|default:'Hassle-free' }}</div>
+            </div>
+            <div class="pdp-perk">
+              <div class="pdp-perk-icon"><i class="fa {{ products.perk_3_icon|default:'fa-shield' }}"></i></div>
+              <div class="pdp-perk-title">{{ products.perk_3_title|default:'Secure payment' }}</div>
+              <div class="pdp-perk-sub">{{ products.perk_3_sub|default:'100% protected' }}</div>
+            </div>
+          </div>
+
+          {% include 'shop/inc/ratings_panel.html' %}
+        </div>
+      </div>
+
+      <!-- Info Column -->
+      <div class="col-md-6 col-lg-6">
+        <div class="pdp-vendor">{{ products.vendor }}</div>
+        <h2 class="pdp-title">{{ products }}</h2>
+        <div class="pdp-underline"></div>
+        <p class="pdp-desc">{{ products.description }}</p>
+
+        {% if products.quantity > 0 %}
+        <span class="pdp-stock">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1"/><path d="M3.5 6l2 2 3-3" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>
+          In stock
+        </span>
+        {% else %}
+        <span class="pdp-stock" style="color:#b00;background:#FCEBEB;border-color:#F7C1C1;">Out of stock</span>
+        {% endif %}
+
+        <div class="pdp-price-panel">
+          <div class="pdp-price-row">
+            <span class="pdp-price-now">Rs. {{ products.selling_price|floatformat:0 }}</span>
+            {% if products.original_price > products.selling_price %}
+            <span class="pdp-price-mrp">Rs. {{ products.original_price|floatformat:0 }}</span>
+            <span class="pdp-price-off">{{ products.discount_percent }}% OFF</span>
+            {% endif %}
+          </div>
+          {% if products.original_price > products.selling_price %}
+          <div class="pdp-save">
+            You save Rs. {{ save_amount|floatformat:0 }}
+          </div>
+          {% endif %}
+          <div class="pdp-tax">Inclusive of all taxes · Free delivery</div>
+          {% if products.cash_on_delivery %}
+          <div class="pdp-tax" style="color:#1a7f37;"><i class="fa fa-money" style="margin-right:5px;"></i>Cash on Delivery available</div>
+          {% else %}
+          <div class="pdp-tax" style="color:#C0392B;"><i class="fa fa-money" style="margin-right:5px;"></i>Cash on Delivery is not available for this product.</div>
+          {% endif %}
+        </div>
+
+        <input type="hidden" value="{{ products.id }}" id="pid">
+
+        <div class="pdp-highlights">
+          <div class="pdp-hl-title">Highlights</div>
+          {% if products.highlight_1 %}<div class="pdp-hl"><i class="fa fa-check"></i> {{ products.highlight_1 }}</div>{% endif %}
+          {% if products.highlight_2 %}<div class="pdp-hl"><i class="fa fa-check"></i> {{ products.highlight_2 }}</div>{% endif %}
+          {% if products.highlight_3 %}<div class="pdp-hl"><i class="fa fa-check"></i> {{ products.highlight_3 }}</div>{% endif %}
+        </div>
+
+        {% if products.quantity > 0 %}
+        <div class="pdp-actions">
+          <button class="pdp-btn-cart" id="btnCart">
+            <i class="fa fa-shopping-cart"></i> Add to Cart
+          </button>
+          <button class="pdp-btn-buy" id="btnBuyNow">
+            <i class="fa fa-bolt"></i> Buy Now
+          </button>
+          <div class="share-inline">
+            <div class="share-btns">
+              <a class="share-btn share-wa" target="_blank" rel="noopener" title="Share on WhatsApp"
+                 href="https://wa.me/?text={{ request.build_absolute_uri|urlencode }}">
+                <i class="fa fa-whatsapp"></i>
+              </a>
+              <a class="share-btn share-fb" target="_blank" rel="noopener" title="Share on Facebook"
+                 href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri|urlencode }}">
+                <i class="fa fa-facebook"></i>
+              </a>
+              <a class="share-btn share-x" target="_blank" rel="noopener" title="Share on X"
+                 href="https://twitter.com/intent/tweet?url={{ request.build_absolute_uri|urlencode }}&text={{ products|urlencode }}">
+                <i class="fa fa-twitter"></i>
+              </a>
+              <a class="share-btn share-tg" target="_blank" rel="noopener" title="Share on Telegram"
+                 href="https://t.me/share/url?url={{ request.build_absolute_uri|urlencode }}&text={{ products|urlencode }}">
+                <i class="fa fa-telegram"></i>
+              </a>
+              <a class="share-btn share-mail" title="Share via Email"
+                 href="mailto:?subject={{ products|urlencode }}&body={{ request.build_absolute_uri|urlencode }}">
+                <i class="fa fa-envelope"></i>
+              </a>
+              <button type="button" class="share-btn share-copy" id="btnShareCopy" title="Copy product link">
+                <i class="fa fa-link"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="d-md-none">
+        <div class="pdp-perks">
+          <div class="pdp-perk">
+            <div class="pdp-perk-icon"><i class="fa {{ products.perk_1_icon|default:'fa-truck' }}"></i></div>
+            <div class="pdp-perk-title">{{ products.perk_1_title|default:'Free delivery' }}</div>
+            <div class="pdp-perk-sub">{{ products.perk_1_sub|default:'2–4 business days' }}</div>
+          </div>
+          <div class="pdp-perk">
+            <div class="pdp-perk-icon"><i class="fa {{ products.perk_2_icon|default:'fa-rotate-left' }}"></i></div>
+            <div class="pdp-perk-title">{{ products.perk_2_title|default:'7-day returns' }}</div>
+            <div class="pdp-perk-sub">{{ products.perk_2_sub|default:'Hassle-free' }}</div>
+          </div>
+          <div class="pdp-perk">
+            <div class="pdp-perk-icon"><i class="fa {{ products.perk_3_icon|default:'fa-shield' }}"></i></div>
+            <div class="pdp-perk-title">{{ products.perk_3_title|default:'Secure payment' }}</div>
+            <div class="pdp-perk-sub">{{ products.perk_3_sub|default:'100% protected' }}</div>
+          </div>
+        </div>
+
+        {% include 'shop/inc/ratings_panel.html' %}
+        </div>
+
+        <div id="toastWrap" style="text-align:left;">
+          <div class="pdp-toast" id="toast"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+{% if related_products %}
+<section class="pdp-related-section" style="padding:0 0 50px;">
+  <div class="container">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:16px;">
+      <div>
+        <p style="font-size:11px; font-weight:500; letter-spacing:0.12em; text-transform:uppercase; color:#999; margin-bottom:4px;">More from this category</p>
+        <h4 class="mb-1" style="font-size:22px; font-weight:600; color:#1a1a1a;">You may also like</h4>
+        <div style="width:36px; height:2px; background:#3C3489; border-radius:2px;"></div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button type="button" onclick="scrollRelated(-1,'relScroll')" aria-label="Scroll left"
+                style="width:36px;height:36px;border-radius:50%;border:1px solid #e2e0ee;background:#fff;color:#3C3489;font-size:18px;line-height:1;cursor:pointer;">&#8249;</button>
+        <button type="button" onclick="scrollRelated(1,'relScroll')" aria-label="Scroll right"
+                style="width:36px;height:36px;border-radius:50%;border:1px solid #e2e0ee;background:#fff;color:#3C3489;font-size:18px;line-height:1;cursor:pointer;">&#8250;</button>
+      </div>
+    </div>
+    <div id="relScroll" class="rel-scroll-row"
+         style="display:flex;gap:24px;overflow-x:auto;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;touch-action:pan-x;padding-bottom:8px;scrollbar-width:none;">
+      {% for item in related_products|slice:":6" %}
+      <div style="flex:0 0 calc((100% - 48px) / 3);min-width:0;">
+        <div class="fk-card"
+             onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 20px rgba(0,0,0,0.08)'"
+             onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none'">
+          <a href="{% url 'product_details' item.category.name item.name %}" style="text-decoration:none; color:inherit;">
+            <div class="fk-img">
+              {% if item.product_image %}
+                <img src="{{ item.product_image.url }}" alt="{{ item.name }}">
+              {% else %}
+                <img src="{% static 'images/no-image.jpg' %}" alt="No Image">
+              {% endif %}
+            </div>
+            <div class="fk-body">
+              <p class="fk-cat">{{ item.category.name }}</p>
+              <h5 class="fk-title">{{ item.name }}</h5>
+              {% if item.avg_rating %}
+              <div class="fk-rating" onclick="event.preventDefault();event.stopPropagation();window.location.href='{% url 'product_details' item.category.name item.name %}#reviews';">
+                <i class="fa fa-star"></i>{{ item.avg_rating|floatformat:1 }}
+                <small>({{ item.rating_count }})</small>
+              </div>
+              {% endif %}
+              <div class="fk-price">Rs.{{ item.selling_price|stringformat:'d' }}</div>
+              <div class="fk-meta">
+                {% if item.original_price > item.selling_price %}
+                <span class="fk-mrp">Rs.{{ item.original_price|stringformat:'d' }}</span>
+                <span class="fk-discount">{{ item.discount_percent }}% off</span>
+                {% endif %}
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% if related_products|length > 6 %}
+    <div style="margin-top:32px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:16px;">
+        <div>
+          <p style="font-size:11px; font-weight:500; letter-spacing:0.12em; text-transform:uppercase; color:#999; margin-bottom:4px;">More to explore</p>
+          <h4 class="mb-1" style="font-size:22px; font-weight:600; color:#1a1a1a;">More for you</h4>
+          <div style="width:36px; height:2px; background:#3C3489; border-radius:2px;"></div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button type="button" onclick="scrollRelated(-1,'relScroll2')" aria-label="Scroll left"
+                  style="width:36px;height:36px;border-radius:50%;border:1px solid #e2e0ee;background:#fff;color:#3C3489;font-size:18px;line-height:1;cursor:pointer;">&#8249;</button>
+          <button type="button" onclick="scrollRelated(1,'relScroll2')" aria-label="Scroll right"
+                  style="width:36px;height:36px;border-radius:50%;border:1px solid #e2e0ee;background:#fff;color:#3C3489;font-size:18px;line-height:1;cursor:pointer;">&#8250;</button>
+        </div>
+      </div>
+      <div id="relScroll2" class="rel-scroll-row"
+           style="display:flex;gap:24px;overflow-x:auto;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;touch-action:pan-x;padding-bottom:8px;scrollbar-width:none;">
+        {% for item in related_products|slice:"6:" %}
+        <div style="flex:0 0 calc((100% - 48px) / 3);min-width:0;">
+          <div class="fk-card"
+               onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 20px rgba(0,0,0,0.08)'"
+               onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none'">
+            <a href="{% url 'product_details' item.category.name item.name %}" style="text-decoration:none; color:inherit;">
+              <div class="fk-img">
+                {% if item.product_image %}
+                  <img src="{{ item.product_image.url }}" alt="{{ item.name }}">
+                {% else %}
+                  <img src="{% static 'images/no-image.jpg' %}" alt="No Image">
+                {% endif %}
+              </div>
+              <div class="fk-body">
+                <p class="fk-cat">{{ item.category.name }}</p>
+                <h5 class="fk-title">{{ item.name }}</h5>
+                {% if item.avg_rating %}
+                <div class="fk-rating" onclick="event.preventDefault();event.stopPropagation();window.location.href='{% url 'product_details' item.category.name item.name %}#reviews';">
+                  <i class="fa fa-star"></i>{{ item.avg_rating|floatformat:1 }}
+                  <small>({{ item.rating_count }})</small>
+                </div>
+                {% endif %}
+                <div class="fk-price">Rs.{{ item.selling_price|stringformat:'d' }}</div>
+                <div class="fk-meta">
+                  {% if item.original_price > item.selling_price %}
+                  <span class="fk-mrp">Rs.{{ item.original_price|stringformat:'d' }}</span>
+                  <span class="fk-discount">{{ item.discount_percent }}% off</span>
+                  {% endif %}
+                </div>
+              </div>
+            </a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</section>
+<style>
+  .rel-scroll-row::-webkit-scrollbar { display: none; }
+  @media (min-width: 992px) {
+    .rel-scroll-row > div { flex-basis: calc((100% - 72px) / 4) !important; }
+  }
+</style>
+<script>
+function scrollRelated(dir, id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.scrollLeft += dir * (el.clientWidth * 0.9);
+}
+</script>
+{% endif %}
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+  .rev-item {
+    border: 1px solid #eee; border-radius: 12px; padding: 10px 12px;
+    margin-bottom: 8px; background: #fff;
+  }
+  .pdp-reviews-block {
+    border: 1px solid #E3F2FD; border-radius: 14px; background: #fff;
+    padding: 12px 14px; margin-top: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    font-family: 'Roboto', sans-serif;
+  }
+  .pdp-rev-head {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 10px; flex-wrap: wrap;
+  }
+  .rev-avatar {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, #2874F0, #4A90E2);
+    color: #fff; font-weight: 700; font-size: 12px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .rev-write-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 16px; border-radius: 30px; border: none;
+    background: #2874F0;
+    color: #fff; font-size: 12px; font-weight: 700; cursor: pointer;
+    box-shadow: 0 4px 12px rgba(40, 116, 240, 0.28);
+    transition: transform .12s;
+  }
+  .rev-write-btn:hover { transform: translateY(-1px); }
+  .rev-write-btn:active { transform: scale(.97); }
+  .rev-do-review { padding: 9px 22px; }
+  .rev-more-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 18px; border-radius: 30px; border: 1px solid #BBDEFB;
+    background: #E3F2FD; color: #2874F0; font-size: 12px; font-weight: 700;
+    cursor: pointer; transition: transform .12s, border-color .15s;
+  }
+  .rev-more-btn:hover { border-color: #2874F0; transform: translateY(-1px); }
+  .rev-more-btn:active { transform: scale(.97); }
+  .rev-modal-overlay {
+    position: fixed; inset: 0; z-index: 1100;
+    background: rgba(10, 6, 30, 0.55); backdrop-filter: blur(3px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    opacity: 0; visibility: hidden; transition: opacity .2s, visibility .2s;
+  }
+  .rev-modal-overlay.show { opacity: 1; visibility: visible; }
+  .rev-modal-card {
+    background: #fff; border-radius: 20px; width: 100%; max-width: 440px;
+    padding: 26px 24px 22px; box-shadow: 0 24px 60px rgba(10, 6, 30, 0.35);
+    transform: translateY(14px); transition: transform .22s ease;
+    max-height: 90vh; overflow-y: auto;
+  }
+  .rev-modal-overlay.show .rev-modal-card { transform: translateY(0); }
+  .rev-stars {
+    display: flex; gap: 8px; justify-content: center; margin: 16px 0 14px;
+  }
+  .rev-stars i {
+    font-size: 34px; color: #ddd; cursor: pointer;
+    transition: transform .12s, color .12s, text-shadow .12s;
+  }
+  .rev-stars i:hover { transform: scale(1.15); color: #FFA41C; }
+  .rev-stars i.active {
+    color: #FFA41C; transform: scale(1.12);
+    text-shadow: 0 2px 8px rgba(255, 164, 28, 0.45);
+  }
+  .rev-modal-actions { display: flex; gap: 10px; margin-top: 18px; }
+  .rev-modal-actions button {
+    flex: 1; border-radius: 12px; padding: 12px; font-size: 13px;
+    font-weight: 700; cursor: pointer; border: none; transition: transform .12s;
+  }
+  .rev-modal-actions button:active { transform: scale(.97); }
+  .rev-back-btn { background: #E3F2FD; color: #2874F0; }
+  .rev-submit-btn {
+    background: linear-gradient(135deg, #FFA41C, #FF8C00); color: #fff;
+    box-shadow: 0 4px 12px rgba(255, 164, 28, 0.3);
+  }
+  .rev-submit-btn:disabled { opacity: .6; cursor: not-allowed; }
+  .rev-msg {
+    display: none; text-align: center; font-size: 12px; font-weight: 600;
+    border-radius: 10px; padding: 9px 12px; margin-top: 12px;
+  }
+  .rev-msg.error { display: block; background: #FDEBEC; color: #C0392B; }
+  .rev-media-preview {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;
+  }
+  .rev-prev-item {
+    position: relative; width: 64px; height: 64px; border-radius: 10px;
+    overflow: hidden; border: 1px solid #eee; background: #f2f2f2; flex: 0 0 auto;
+  }
+  .rev-prev-item img, .rev-prev-item video {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+  }
+  .rev-prev-video-badge {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(10, 6, 30, 0.35); color: #fff; font-size: 18px; pointer-events: none;
+  }
+  .rev-prev-remove {
+    position: absolute; top: 3px; right: 3px; width: 20px; height: 20px;
+    border-radius: 50%; border: none; background: rgba(0, 0, 0, 0.65); color: #fff;
+    font-size: 12px; line-height: 1; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; padding: 0;
+  }
+  .rev-prev-remove:hover { background: #C0392B; }
+  .rev-img-overlay {
+    position: fixed; inset: 0; z-index: 1300;
+    background: rgba(10, 6, 30, 0.78); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    opacity: 0; visibility: hidden; transition: opacity .2s, visibility .2s;
+  }
+  .rev-img-overlay.show { opacity: 1; visibility: visible; }
+  .rev-img-overlay img {
+    max-width: 92vw; max-height: 74vh; border-radius: 14px;
+    box-shadow: 0 30px 70px rgba(0, 0, 0, .5);
+  }
+  .rev-img-wrapper {
+    display: flex; flex-direction: column; align-items: center; max-width: 92vw;
+  }
+  .rev-img-info {
+    margin-top: 14px; padding: 12px 16px; background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(6px); border-radius: 12px; color: #333;
+    max-width: 500px; width: 100%; text-align: left;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+  }
+  .rev-img-info-top {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .rev-img-name { font-size: 14px; font-weight: 700; color: #1a1a1a; }
+  .rev-img-score {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 13px; font-weight: 700; color: #1a1a1a;
+  }
+  .rev-img-score .rev-img-score-num { color: #26A541; font-weight: 800; }
+  .rev-img-score i { color: #FFA41C; font-size: 11px; }
+  .rev-img-verified { margin-top: 0; }
+  .rev-img-caption {
+    margin: 8px 0 0; color: #444; font-size: 13px; line-height: 1.55;
+    display: none; white-space: pre-wrap;
+  }
+  .rev-img-nav {
+    position: fixed; top: 50%; transform: translateY(-50%); z-index: 1301;
+    width: 44px; height: 44px; border-radius: 50%; border: none;
+    background: rgba(255, 255, 255, .16); color: #fff; font-size: 20px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background .15s;
+  }
+  .rev-img-nav:hover { background: rgba(255, 255, 255, .32); }
+  .rev-img-prev { left: 14px; }
+  .rev-img-next { right: 14px; }
+  .rev-img-slide-left { animation: revImgSlideLeft .28s ease; }
+  .rev-img-slide-right { animation: revImgSlideRight .28s ease; }
+  @keyframes revImgSlideLeft {
+    from { transform: translateX(40px); opacity: .35; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes revImgSlideRight {
+    from { transform: translateX(-40px); opacity: .35; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  .rev-img-close {
+    position: fixed; top: 18px; right: 22px; z-index: 1301;
+    width: 42px; height: 42px; border-radius: 50%; border: none;
+    background: rgba(255, 255, 255, .12); color: #fff; font-size: 20px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background .15s;
+  }
+  .rev-img-close:hover { background: rgba(255, 255, 255, .28); }
+
+  /* ── Flipkart-style Ratings & Reviews ── */
+  .rev-overview {
+    display: grid;
+    grid-template-columns: 170px 1fr;
+    gap: 24px;
+    align-items: start;
+    padding: 18px 0 10px;
+    border-bottom: 1px solid #f0eefb;
+  }
+  .rev-score { text-align: center; }
+  .rev-score-num {
+    font-size: 46px; font-weight: 700; color: #1a1a1a; line-height: 1.05;
+  }
+  .rev-score-stars {
+    font-size: 15px; letter-spacing: 2px; margin-top: 4px;
+  }
+  .rev-score-stars .fa-star { color: #FFA41C; }
+  .rev-score-stars .fa-star-o { color: #ddd; }
+  .rev-score-count { font-size: 13px; color: #888; margin-top: 6px; font-weight: 600; }
+  .rev-verified-count {
+    display: inline-flex; align-items: center; gap: 5px;
+    margin-top: 10px; font-size: 11px; font-weight: 700; color: #26A541;
+    background: #E8F5E9; border: 1px solid #A5D6A7; border-radius: 30px;
+    padding: 5px 12px;
+  }
+  .rev-verified-count i { color: #26A541; }
+  .rev-dist { display: flex; flex-direction: column; gap: 8px; padding-top: 10px; }
+  .rev-dist-row {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .rev-dist-label {
+    width: 38px; font-size: 13px; font-weight: 600; color: #555;
+    display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;
+  }
+  .rev-dist-label i { color: #FFA41C; font-size: 11px; }
+  .rev-dist-bar {
+    flex: 1; height: 8px; border-radius: 20px; background: #F0F0F0;
+    overflow: hidden;
+  }
+  .rev-dist-fill {
+    height: 100%; border-radius: 20px;
+    background: linear-gradient(90deg, #FFA41C, #FF8C00);
+  }
+  .rev-dist-pct { width: 42px; font-size: 13px; font-weight: 600; color: #666; text-align: right; flex-shrink: 0; }
+
+  .rev-media { padding: 16px 0 6px; }
+  .rev-media-title {
+    font-size: 13px; font-weight: 700; color: #1a1a1a;
+    display: flex; align-items: center; gap: 6px; margin-bottom: 10px;
+  }
+  .rev-media-title i { color: #2874F0; }
+  .rev-media-title span { color: #888; font-weight: 600; }
+  .rev-media-row {
+    display: flex; align-items: center; gap: 10px; overflow: hidden;
+  }
+  .rev-media-item { flex: 0 0 auto; cursor: zoom-in; }
+  .rev-media-item img, .rev-media-item video {
+    width: 82px; height: 82px; object-fit: cover;
+    border-radius: 10px; border: 1px solid #eee; display: block;
+    background: #000;
+  }
+  .rev-media-more-btn {
+    flex: 0 0 auto; width: 82px; height: 82px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: #F5F5F5; border: 1px solid #eee; border-radius: 10px;
+    cursor: pointer; transition: transform .12s;
+  }
+  .rev-media-more-btn:hover { transform: translateY(-1px); }
+  .rev-media-more-num { font-size: 16px; font-weight: 800; color: #2874F0; line-height: 1.1; }
+  .rev-media-more-text { font-size: 9px; font-weight: 600; color: #2874F0; margin-top: 1px; }
+
+  .rev-write-row { text-align: center; padding: 14px 0 4px; }
+  .rev-flag {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 16px; border-radius: 30px; font-size: 12px; font-weight: 700;
+  }
+  .rev-flag-done { background: #E8F5E9; color: #26A541; border: 1px solid #A5D6A7; }
+  .rev-flag-closed { background: #f7f2f2; color: #a98d8d; border: 1px solid #ece4e4; }
+
+  .rev-carousel {
+    position: relative;
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 12px;
+  }
+  .rev-nav {
+    flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%;
+    border: 1px solid #E0E0E0; background: #fff; color: #2874F0;
+    font-size: 20px; line-height: 1; cursor: pointer;
+    transition: transform .12s, border-color .15s;
+    z-index: 1;
+  }
+  .rev-nav:hover { border-color: #2874F0; transform: translateY(-1px); }
+  .rev-nav:active { transform: scale(.94); }
+  .rev-row {
+    flex: 1; min-width: 0;
+    display: flex; gap: 12px; overflow-x: auto;
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    touch-action: pan-x; overscroll-behavior-x: contain;
+    padding: 4px 2px 10px;
+  }
+  .rev-row::-webkit-scrollbar { display: none; }
+  .rev-card {
+    flex: 0 0 320px;
+    scroll-snap-align: center;
+    border: 1px solid #eee; border-radius: 12px; padding: 16px;
+    background: #fff; display: flex; flex-direction: column; gap: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    position: relative;
+  }
+  .rev-card-top { display: flex; align-items: flex-start; gap: 12px; }
+  .rev-avatar-lg {
+    width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, #2874F0, #4A90E2);
+    color: #fff; font-weight: 700; font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .rev-card-who { flex: 1; min-width: 0; }
+  .rev-card-name {
+    font-size: 14px; font-weight: 700; color: #1a1a1a; line-height: 1.3;
+  }
+  .rev-verified {
+    display: inline-flex; align-items: center; gap: 4px;
+    margin-top: 4px; font-size: 10px; font-weight: 700; color: #26A541;
+    background: #E8F5E9; border: 1px solid #A5D6A7; border-radius: 20px;
+    padding: 2px 8px;
+  }
+  .rev-verified i { color: #26A541; font-size: 9px; }
+  .rev-card-date { font-size: 12px; color: #aaa; margin-top: 3px; }
+  .rev-card-score {
+    display: inline-flex; gap: 2px; font-size: 12px;
+    position: absolute; top: 14px; right: 14px;
+  }
+  .rev-card-score .fa-star { color: #FFA41C; }
+  .rev-card-score .fa-star-o { color: #ddd; }
+  .rev-card-text {
+    font-size: 14px; color: #444; line-height: 1.6; margin: 0;
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4;
+    overflow: hidden;
+  }
+  .rev-card-text.rev-card-empty { color: #bbb; font-style: italic; }
+  .rev-card-img { cursor: zoom-in; display: block; margin-top: 2px; }
+  .rev-card-img img, .rev-card-img video {
+    width: 64px; height: 64px; object-fit: cover; border-radius: 8px;
+    border: 1px solid #eee; display: block; background: #000;
+  }
+
+  .rev-empty-box {
+    border: 1px dashed #e2e0ee; border-radius: 12px;
+    padding: 18px 12px; text-align: center;
+  }
+  .rev-empty-box i { font-size: 22px; color: #ddd; display: block; margin-bottom: 6px; }
+  .rev-empty-box p { color: #888; margin: 0; font-size: 12px; }
+  .rev-all-wrap { text-align: center; margin-top: 12px; }
+
+  .rev-all-overlay {
+    position: fixed; inset: 0; z-index: 1200;
+    background: rgba(10, 6, 30, 0.55); backdrop-filter: blur(3px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    opacity: 0; visibility: hidden; transition: opacity .2s, visibility .2s;
+  }
+  .rev-all-overlay.show { opacity: 1; visibility: visible; }
+  .rev-all-card {
+    background: #fff; border-radius: 20px; width: 100%; max-width: 620px;
+    box-shadow: 0 24px 60px rgba(10, 6, 30, 0.35);
+    transform: translateY(14px); transition: transform .22s ease;
+    max-height: 88vh; display: flex; flex-direction: column;
+  }
+  .rev-all-overlay.show .rev-all-card { transform: translateY(0); }
+  .rev-all-head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 12px; padding: 20px 22px 14px; border-bottom: 1px solid #f0eefb;
+  }
+  .rev-all-close {
+    width: 34px; height: 34px; border-radius: 50%; border: 1px solid #eee;
+    background: #fff; color: #666; font-size: 15px; cursor: pointer;
+    flex-shrink: 0;
+  }
+  .rev-all-close:hover { border-color: #2874F0; color: #2874F0; }
+  .rev-all-body {
+    overflow-y: auto; padding: 12px 22px 22px; -webkit-overflow-scrolling: touch;
+  }
+  .rev-all-item {
+    border-bottom: 1px solid #f0eefb; padding: 14px 0;
+  }
+  .rev-all-item:last-child { border-bottom: none; }
+
+  .rev-all-media-section {
+    margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid #f0eefb;
+  }
+  .rev-all-media-title {
+    font-size: 13px; font-weight: 700; color: #1a1a1a;
+    display: flex; align-items: center; gap: 6px; margin-bottom: 10px;
+  }
+  .rev-all-media-title i { color: #2874F0; }
+  .rev-all-media-title span { color: #888; font-weight: 600; }
+  .rev-all-media-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 8px;
+  }
+  .rev-all-media-item {
+    cursor: zoom-in; border-radius: 10px; overflow: hidden;
+    border: 1px solid #eee; aspect-ratio: 1;
+  }
+  .rev-all-media-item img, .rev-all-media-item video {
+    width: 100%; height: 100%; object-fit: cover;
+    transition: transform .15s; display: block; background: #000;
+  }
+  .rev-all-media-item:hover img, .rev-all-media-item:hover video { transform: scale(1.05); }
+
+  @media (max-width: 575px) {
+    .pdp-reviews-block { padding: 10px 12px; margin-top: 10px; }
+    .pdp-rev-head { gap: 6px; }
+    .pdp-rev-head h4 { font-size: 15px; margin: 0; }
+    .pdp-rev-head p { font-size: 11px; margin: 0; }
+
+    .rev-overview {
+      grid-template-columns: 90px 1fr;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 0 8px;
+    }
+    .rev-score { text-align: center; }
+    .rev-score-num { font-size: 32px; line-height: 1.05; }
+    .rev-score-stars { font-size: 12px; letter-spacing: 1px; margin-top: 2px; }
+    .rev-score-count { font-size: 11px; margin-top: 3px; color: #888; }
+    .rev-verified-count { font-size: 9px; padding: 3px 8px; margin-top: 6px; gap: 3px; }
+    .rev-verified-count i { font-size: 8px; }
+
+    .rev-dist { gap: 4px; padding-top: 0; }
+    .rev-dist-row { gap: 6px; }
+    .rev-dist-label { width: 28px; font-size: 11px; gap: 2px; }
+    .rev-dist-label i { font-size: 9px; }
+    .rev-dist-bar { height: 6px; }
+    .rev-dist-pct { width: 30px; font-size: 11px; }
+
+    .rev-media { padding: 8px 0 4px; }
+    .rev-media-title { font-size: 12px; margin-bottom: 6px; }
+    .rev-media-item img, .rev-media-item video { width: 60px; height: 60px; border-radius: 8px; }
+    .rev-media-row { gap: 8px; width: 100%; }
+    .rev-write-row { padding: 8px 0 4px; }
+    .rev-write-btn { font-size: 12px; padding: 7px 16px; }
+    .rev-flag { font-size: 12px; padding: 7px 14px; }
+
+    .rev-carousel { gap: 0; margin-top: 8px; }
+    .rev-nav { width: 32px; height: 32px; font-size: 18px; border: none; background: none; color: #2874F0; }
+    .rev-nav:active { transform: scale(.9); }
+    .rev-row {
+      gap: 0; padding: 2px 0 6px;
+      scroll-snap-type: x mandatory;
+    }
+    .rev-card {
+      flex: 0 0 calc(100% - 8px);
+      scroll-snap-align: center;
+      padding: 12px;
+      border-radius: 12px;
+      gap: 8px;
+      margin: 0 4px;
+    }
+    .rev-card-top { gap: 8px; }
+    .rev-avatar-lg { width: 34px; height: 34px; font-size: 13px; }
+    .rev-card-who { gap: 0; }
+    .rev-card-name { font-size: 13px; }
+    .rev-verified { font-size: 9px; padding: 2px 6px; margin-top: 3px; gap: 3px; }
+    .rev-verified i { font-size: 8px; }
+    .rev-card-date { font-size: 11px; margin-top: 2px; }
+    .rev-card-score { font-size: 11px; gap: 1px; }
+    .rev-card-text { font-size: 13px; line-height: 1.55; -webkit-line-clamp: 4; margin-top: 0; }
+    .rev-card-img img, .rev-card-img video { width: 56px; height: 56px; border-radius: 8px; }
+
+    .rev-media-more-btn { width: 60px; height: 60px; border-radius: 8px; }
+    .rev-media-more-num { font-size: 14px; }
+    .rev-media-more-text { font-size: 8px; }
+
+    .rev-img-nav { display: none !important; }
+    .rev-img-info { padding: 10px 12px; margin-top: 12px; }
+    .rev-img-name { font-size: 13px; }
+    .rev-img-score { font-size: 12px; }
+
+    .rev-all-wrap { margin-top: 8px; }
+    .rev-more-btn { font-size: 12px; padding: 6px 14px; }
+
+    .rev-all-card { max-width: 100%; border-radius: 16px; }
+    .rev-all-head { padding: 14px 16px 10px; }
+    .rev-all-body { padding: 8px 16px 16px; }
+    .rev-all-item .rev-avatar-lg { width: 34px; height: 34px; font-size: 13px; }
+    .rev-all-media-grid { grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); gap: 6px; }
+  }
+</style>
+
+<div class="rev-modal-overlay" id="revModal" aria-hidden="true">
+  <div class="rev-modal-card" role="alertdialog" aria-modal="true" aria-labelledby="revModalTitle">
+    <h5 class="mb-1" id="revModalTitle" style="font-size:18px;font-weight:700;color:#1a1a1a;">
+      <i class="fa fa-star" style="color:#FFA41C;"></i> Rate this Product
+    </h5>
+    <p style="font-size:13px;font-weight:700;color:#1a1a1a;margin:6px 0 2px;">{{ products.name }}</p>
+    <p style="font-size:12px;color:#999;margin:0;">How did you like this product?</p>
+    <div class="rev-stars" id="revStars">
+      <i class="fa fa-star-o" data-v="1"></i>
+      <i class="fa fa-star-o" data-v="2"></i>
+      <i class="fa fa-star-o" data-v="3"></i>
+      <i class="fa fa-star-o" data-v="4"></i>
+      <i class="fa fa-star-o" data-v="5"></i>
+    </div>
+    <textarea id="revComment" class="form-control" rows="3" maxlength="500"
+              placeholder="Share your experience (optional)"
+              style="width:100%;resize:none;"></textarea>
+    <label for="revImage" style="display:flex;align-items:center;gap:8px;margin-top:12px;padding:11px 14px;border:1.5px dashed #90CAF9;border-radius:12px;cursor:pointer;font-size:13px;font-weight:600;color:#2874F0;background:#E3F2FD;">
+      <i class="fa fa-camera"></i> <span id="revImageLabel">Add photos &amp; videos (optional)</span>
+      <input type="file" id="revImage" accept="image/jpeg,image/jpg,image/png,image/webp,video/mp4,video/webm,video/quicktime" multiple style="display:none;">
+    </label>
+    <div class="rev-media-preview" id="revMediaPreview"></div>
+    <div class="rev-msg" id="revMsg"></div>
+    <div class="rev-modal-actions">
+      <button type="button" class="rev-back-btn" onclick="closeReviewModal()">Back</button>
+      <button type="button" class="rev-submit-btn" id="revSubmitBtn" onclick="submitReview()">Submit Review</button>
+    </div>
+  </div>
+</div>
+
+<div class="rev-img-overlay" id="revImgOverlay" aria-hidden="true" onclick="closeReviewImage(event)">
+  <button type="button" class="rev-img-close" aria-label="Close" onclick="closeReviewImage(event)"><i class="fa fa-times"></i></button>
+  <button type="button" class="rev-img-nav rev-img-prev" aria-label="Previous review photo" onclick="stepReviewImage(-1);event.stopPropagation()"><i class="fa fa-chevron-left"></i></button>
+  <button type="button" class="rev-img-nav rev-img-next" aria-label="Next review photo" onclick="stepReviewImage(1);event.stopPropagation()"><i class="fa fa-chevron-right"></i></button>
+  <div class="rev-img-wrapper">
+    <img id="revImgFull" src="" alt="Review media" style="display:block;">
+    <video id="revImgVideo" controls playsinline style="display:none;max-width:92vw;max-height:74vh;border-radius:14px;box-shadow:0 30px 70px rgba(0,0,0,.5);background:#000;"></video>
+    <div class="rev-img-info">
+      <div class="rev-img-info-top">
+        <span class="rev-img-name" id="revImgName"></span>
+        <span class="rev-img-score" id="revImgScore"></span>
+        <span class="rev-verified rev-img-verified" id="revImgVerified" style="display:none;"><i class="fa fa-check-circle"></i> Verified Buyer</span>
+      </div>
+      <p class="rev-img-caption" id="revImgCaption"></p>
+    </div>
+  </div>
+</div>
+
+<div class="rev-all-overlay" id="revAllOverlay" aria-hidden="true">
+  <div class="rev-all-card">
+    <div class="rev-all-head">
+      <div>
+        <h5 style="font-size:17px;font-weight:700;color:#1a1a1a;margin:0;">
+          <i class="fa fa-star" style="color:#FFA41C;"></i> All Reviews
+        </h5>
+        {% if rating_count %}
+        <p style="font-size:12px;color:#888;margin:4px 0 0;">
+          <span style="font-weight:700;color:#1a1a1a;">{{ avg_rating|floatformat:1 }}</span>
+          <span style="color:#FFA41C;margin-left:3px;letter-spacing:1px;">
+            {% widthratio avg_rating 1 1 as int_avg %}
+            {% for i in "12345" %}
+            <i class="fa {% if forloop.counter <= int_avg %}fa-star{% else %}fa-star-o{% endif %}" style="font-size:11px;color:#FFA41C;"></i>
+            {% endfor %}
+          </span>
+          &nbsp;·&nbsp; {{ rating_count }} rating{{ rating_count|pluralize }}
+        </p>
+        {% endif %}
+      </div>
+      <button type="button" class="rev-all-close" aria-label="Close" onclick="closeAllReviews()"><i class="fa fa-times"></i></button>
+    </div>
+    <div class="rev-all-body">
+      {% if review_media %}
+      <div class="rev-all-media-section">
+        <div class="rev-all-media-title"><i class="fa fa-camera"></i> All Customer Media <span>({{ review_media|length }})</span></div>
+        <div class="rev-all-media-grid">
+          {% for m in review_media %}
+          <a href="{{ m.url }}" onclick="openReviewImage(this);return false;" class="rev-all-media-item" data-name="{{ m.user|display_name }}" data-rating="{{ m.rating }}" data-verified="{% if m.verified %}1{% else %}0{% endif %}" data-comment="{{ m.comment|escapejs }}" data-type="{{ m.type }}">
+            {% if m.type == 'video' %}
+            <video src="{{ m.url }}" muted playsinline preload="metadata"></video>
+            {% else %}
+            <img src="{{ m.url }}" alt="Customer photo">
+            {% endif %}
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      {% for r in ratings %}
+      <div class="rev-all-item">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <div class="rev-avatar-lg">{{ r.user|display_name|slice:":1"|upper }}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <span style="font-weight:700;font-size:13px;color:#1a1a1a;">{{ r.user|display_name }}</span>
+              {% if r.user.id in verified_ids %}
+              <span class="rev-verified"><i class="fa fa-check-circle"></i> Verified Buyer</span>
+              {% endif %}
+              <span style="font-size:13px;letter-spacing:2px;">
+                {% for i in "12345" %}
+                <i class="fa {% if forloop.counter <= r.rating %}fa-star{% else %}fa-star-o{% endif %}" style="color:#FFA41C;font-size:12px;"></i>
+                {% endfor %}
+              </span>
+              <span style="margin-left:auto;font-size:12px;color:#aaa;">{{ r.created_at|date:"d M Y" }}</span>
+            </div>
+            {% if r.comment %}
+            <p style="font-size:13px;color:#444;margin:6px 0 0;">{{ r.comment }}</p>
+            {% else %}
+            <p style="font-size:12px;color:#bbb;margin:6px 0 0;font-style:italic;">No written review</p>
+            {% endif %}
+            {% if r.media_items %}
+            <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+              {% for m in r.media_items %}
+              <a href="{{ m.url }}" onclick="openReviewImage(this);return false;" style="display:inline-block;cursor:zoom-in;" data-name="{{ r.user|display_name }}" data-rating="{{ r.rating }}" data-verified="{% if r.user.id in verified_ids %}1{% else %}0{% endif %}" data-comment="{{ r.comment|default:''|escapejs }}" data-type="{{ m.type }}">
+                {% if m.type == 'video' %}
+                <video src="{{ m.url }}" muted playsinline preload="metadata" style="width:72px;height:72px;object-fit:cover;border-radius:10px;border:1px solid #eee;background:#000;"></video>
+                {% else %}
+                <img src="{{ m.url }}" alt="Review photo"
+                     style="width:72px;height:72px;object-fit:cover;border-radius:10px;border:1px solid #eee;">
+                {% endif %}
+              </a>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div style="border:1px dashed #e2e0ee;border-radius:12px;padding:18px 12px;text-align:center;">
+        <i class="fa fa-star-o" style="font-size:22px;color:#ddd;display:block;margin-bottom:6px;"></i>
+        <p style="color:#888;margin:0;font-size:12px;">No reviews</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script>
+function scrollToReviewsFromHash() {
+  if (location.hash === '#reviews') {
+    setTimeout(function() {
+      if (typeof openAllReviews === 'function') openAllReviews();
+    }, 350);
+  }
+}
+window.addEventListener('load', scrollToReviewsFromHash);
+var revModal = document.getElementById('revModal');
+var revStars = document.getElementById('revStars');
+var revComment = document.getElementById('revComment');
+var revImage = document.getElementById('revImage');
+var revImageLabel = document.getElementById('revImageLabel');
+var revMsg = document.getElementById('revMsg');
+var revSubmit = document.getElementById('revSubmitBtn');
+var revMediaPreview = document.getElementById('revMediaPreview');
+var revMediaFiles = [];
+var revVal = 0;
+var revOrderItemId = null;
+
+function renderRevStars(v) {
+  revVal = v;
+  [].forEach.call(revStars.children, function(star) {
+    star.className = 'fa ' + (parseInt(star.dataset.v, 10) <= v ? 'fa-star active' : 'fa-star-o');
+  });
+}
+
+function openReviewModal(oid) {
+  var isLoggedIn = {{ request.user.is_authenticated|yesno:'true,false' }};
+  if (!isLoggedIn) {
+    window.location.href = '/login';
+    return;
+  }
+  revOrderItemId = oid || null;
+  revMsg.className = 'rev-msg';
+  revMsg.textContent = '';
+  revComment.value = '';
+  revImage.value = '';
+  revMediaFiles = [];
+  if (revMediaPreview) revMediaPreview.innerHTML = '';
+  revImageLabel.textContent = 'Add photos &amp; videos (optional)';
+  renderRevStars(0);
+  revSubmit.disabled = false;
+  revModal.classList.add('show');
+  revModal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeReviewModal() {
+  revModal.classList.remove('show');
+  revModal.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+var revImgOverlay = document.getElementById('revImgOverlay');
+var revImgFull = document.getElementById('revImgFull');
+var revImgVideo = document.getElementById('revImgVideo');
+var revImgCaption = document.getElementById('revImgCaption');
+var revImgName = document.getElementById('revImgName');
+var revImgScore = document.getElementById('revImgScore');
+var revImgVerified = document.getElementById('revImgVerified');
+var revImgPrevBtn = document.querySelector('.rev-img-prev');
+var revImgNextBtn = document.querySelector('.rev-img-next');
+
+var revImgGallery = [];
+var revImgIdx = 0;
+
+function renderRevImgStars(rating) {
+  var n = parseInt(rating, 10) || 0;
+  var s = '<span class="rev-img-score-num">' + n + '.0</span>&nbsp;';
+  for (var i = 1; i <= 5; i++) {
+    s += '<i class="fa ' + (i <= n ? 'fa-star' : 'fa-star-o') + '"></i>';
+  }
+  return s;
+}
+
+function renderRevImage(link) {
+  if (!link) return;
+  var isVideo = link.getAttribute('data-type') === 'video';
+  if (isVideo) {
+    revImgFull.style.display = 'none';
+    revImgVideo.style.display = 'block';
+    revImgVideo.src = link.getAttribute('href');
+    revImgVideo.play().catch(function() {});
+  } else {
+    revImgVideo.pause();
+    revImgVideo.removeAttribute('src');
+    revImgVideo.load();
+    revImgVideo.style.display = 'none';
+    revImgFull.style.display = 'block';
+    revImgFull.src = link.getAttribute('href');
+  }
+  revImgName.textContent = link.getAttribute('data-name') || '';
+  revImgScore.innerHTML = renderRevImgStars(link.getAttribute('data-rating'));
+  if (link.getAttribute('data-verified') === '1') {
+    revImgVerified.style.display = 'inline-flex';
+  } else {
+    revImgVerified.style.display = 'none';
+  }
+  var comment = link.getAttribute('data-comment') || '';
+  if (comment) {
+    revImgCaption.textContent = comment;
+    revImgCaption.style.display = 'block';
+  } else {
+    revImgCaption.textContent = '';
+    revImgCaption.style.display = 'none';
+  }
+  if (revImgPrevBtn) revImgPrevBtn.style.display = revImgIdx > 0 ? 'flex' : 'none';
+  if (revImgNextBtn) revImgNextBtn.style.display = revImgIdx < revImgGallery.length - 1 ? 'flex' : 'none';
+}
+
+function openReviewImage(link) {
+  var scope = link.closest('.rev-media-row') || link.closest('.rev-all-media-grid') || null;
+  revImgGallery = scope
+    ? Array.prototype.slice.call(scope.querySelectorAll('a[data-name]'))
+    : [link];
+  revImgIdx = revImgGallery.indexOf(link);
+  if (revImgIdx === -1) revImgIdx = 0;
+  renderRevImage(revImgGallery[revImgIdx]);
+  revImgOverlay.classList.add('show');
+  revImgOverlay.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+function stepReviewImage(dir) {
+  if (!revImgGallery.length) return;
+  var next = revImgIdx + dir;
+  if (next < 0 || next >= revImgGallery.length) return;
+  var media = revImgVideo.style.display === 'block' ? revImgVideo : revImgFull;
+  var out = dir > 0 ? 'rev-img-slide-left' : 'rev-img-slide-right';
+  media.classList.remove('rev-img-slide-left', 'rev-img-slide-right');
+  void media.offsetWidth;
+  media.classList.add(out);
+  revImgIdx = next;
+  renderRevImage(revImgGallery[revImgIdx]);
+  window.setTimeout(function() {
+    media.classList.remove(out);
+  }, 300);
+}
+
+var revImgTouchX = null;
+revImgOverlay.addEventListener('touchstart', function(e) {
+  revImgTouchX = e.touches[0].clientX;
+}, { passive: true });
+revImgOverlay.addEventListener('touchend', function(e) {
+  if (revImgTouchX === null) return;
+  var dx = e.changedTouches[0].clientX - revImgTouchX;
+  if (Math.abs(dx) > 40) stepReviewImage(dx < 0 ? 1 : -1);
+  revImgTouchX = null;
+}, { passive: true });
+
+function closeReviewImage(event) {
+  if (event && event.target !== revImgOverlay && !event.target.closest('.rev-img-close')) return;
+  revImgVideo.pause();
+  revImgVideo.removeAttribute('src');
+  revImgVideo.load();
+  revImgOverlay.classList.remove('show');
+  revImgOverlay.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && revImgOverlay.classList.contains('show')) closeReviewImage();
+  if (e.key === 'ArrowLeft' && revImgOverlay.classList.contains('show')) stepReviewImage(-1);
+  if (e.key === 'ArrowRight' && revImgOverlay.classList.contains('show')) stepReviewImage(1);
+  if (e.key === 'Escape' && revAllOverlay && revAllOverlay.classList.contains('show')) closeAllReviews();
+});
+
+function scrollRevRow(btn) {
+  var carousel = btn.closest('.rev-carousel');
+  if (!carousel) return;
+  var row = carousel.querySelector('.rev-row');
+  if (!row) return;
+  var dir = btn.classList.contains('rev-nav-next') ? 1 : -1;
+  row.scrollBy({ left: dir * row.clientWidth * 0.8, behavior: 'smooth' });
+}
+
+var revAllOverlay = document.getElementById('revAllOverlay');
+
+function openAllReviews() {
+  if (!revAllOverlay) return;
+  revAllOverlay.classList.add('show');
+  revAllOverlay.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeAllReviews() {
+  if (!revAllOverlay) return;
+  revAllOverlay.classList.remove('show');
+  revAllOverlay.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+if (revAllOverlay) {
+  revAllOverlay.addEventListener('click', function(e) {
+    if (e.target === revAllOverlay) closeAllReviews();
+  });
+}
+
+var REV_ALLOWED_IMAGE = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+var REV_ALLOWED_VIDEO = ['video/mp4', 'video/webm', 'video/quicktime'];
+
+function revIsAllowedFile(file) {
+  var type = (file.type || '').toLowerCase();
+  return REV_ALLOWED_IMAGE.indexOf(type) !== -1 || REV_ALLOWED_VIDEO.indexOf(type) !== -1;
+}
+
+function renderMediaPreview() {
+  if (!revMediaPreview) return;
+  revMediaPreview.innerHTML = '';
+  revMediaFiles.forEach(function(file, idx) {
+    var wrap = document.createElement('div');
+    wrap.className = 'rev-prev-item';
+    var isVideo = (file.type || '').indexOf('video/') === 0;
+    if (isVideo) {
+      var vid = document.createElement('video');
+      vid.src = URL.createObjectURL(file);
+      vid.muted = true;
+      vid.playsInline = true;
+      vid.preload = 'metadata';
+      wrap.appendChild(vid);
+      var badge = document.createElement('span');
+      badge.className = 'rev-prev-video-badge';
+      badge.innerHTML = '<i class="fa fa-play"></i>';
+      wrap.appendChild(badge);
+    } else {
+      var img = document.createElement('img');
+      img.src = URL.createObjectURL(file);
+      img.alt = 'Selected photo';
+      wrap.appendChild(img);
+    }
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'rev-prev-remove';
+    btn.setAttribute('aria-label', 'Remove media');
+    btn.innerHTML = '<i class="fa fa-times"></i>';
+    btn.addEventListener('click', function() {
+      revMediaFiles.splice(idx, 1);
+      renderMediaPreview();
+    });
+    wrap.appendChild(btn);
+    revMediaPreview.appendChild(wrap);
+  });
+  if (revImageLabel) {
+    revImageLabel.textContent = revMediaFiles.length
+      ? (revMediaFiles.length + ' media selected - add more')
+      : 'Add photos &amp; videos (optional)';
+  }
+}
+
+if (revImage) {
+  revImage.addEventListener('change', function() {
+    if (revImage.files && revImage.files.length) {
+      for (var i = 0; i < revImage.files.length; i++) {
+        var f = revImage.files[i];
+        if (!revIsAllowedFile(f)) {
+          revMsg.className = 'rev-msg error';
+          revMsg.textContent = 'Only JPG, PNG, WEBP images and MP4, WEBM, MOV videos are allowed.';
+          continue;
+        }
+        revMediaFiles.push(f);
+      }
+      if (revMediaFiles.length > 6) {
+        revMsg.className = 'rev-msg error';
+        revMsg.textContent = 'You can upload up to 6 photos or videos.';
+        revMediaFiles = revMediaFiles.slice(0, 6);
+      }
+    }
+    revImage.value = '';
+    renderMediaPreview();
+  });
+}
+
+[].forEach.call(revStars.children, function(star) {
+  star.addEventListener('click', function() {
+    renderRevStars(parseInt(star.dataset.v, 10));
+  });
+});
+
+function submitReview() {
+  if (!revVal) {
+    revMsg.className = 'rev-msg error';
+    revMsg.textContent = 'Please select a star rating.';
+    return;
+  }
+  revSubmit.disabled = true;
+  var fd = new FormData();
+  if (revOrderItemId) fd.append('order_item_id', revOrderItemId);
+  fd.append('rating', revVal);
+  fd.append('comment', revComment.value);
+  revMediaFiles.forEach(function(file) {
+    fd.append('media', file, file.name);
+  });
+  fetch('/rate-product', {
+    method: 'POST',
+    headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+    body: fd
+  })
+  .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, d: d }; }); })
+  .then(function(res) {
+    revSubmit.disabled = false;
+    if (!res.ok || res.d.error) {
+      revMsg.className = 'rev-msg error';
+      revMsg.textContent = res.d.error || 'Failed to submit. Please try again.';
+      return;
+    }
+    closeReviewModal();
+    window.location.reload();
+  })
+  .catch(function() {
+    revSubmit.disabled = false;
+    revMsg.className = 'rev-msg error';
+    revMsg.textContent = 'Network error. Please try again.';
+  });
+}
+
+revModal.addEventListener('click', function(e) {
+  if (e.target === revModal) closeReviewModal();
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && revModal.classList.contains('show')) closeReviewModal();
+});
+
+(function() {
+  var rows = document.querySelectorAll('#revMediaRow');
+  if (!rows.length) return;
+  [].forEach.call(rows, function(row) {
+    var more = row.querySelector('.rev-media-more-btn');
+    if (!more) return;
+    var items = row.querySelectorAll('.rev-media-item');
+    var total = items.length;
+    if (total < 2) return;
+
+    var moreNum = more.querySelector('.rev-media-more-num');
+
+    function update() {
+      var i;
+      for (i = 0; i < total; i++) items[i].style.display = '';
+      more.style.display = 'none';
+
+      var itemW = items[0].getBoundingClientRect().width || 0;
+      if (itemW <= 0) return;
+
+      var rowW = row.getBoundingClientRect().width || 0;
+      if (rowW <= 0) return;
+
+      var gap = parseInt(getComputedStyle(row).gap, 10);
+      if (isNaN(gap)) gap = 8;
+
+      var maxN = Math.floor((rowW - itemW) / (itemW + gap));
+      if (maxN < 1) maxN = 1;
+      if (maxN >= total) return;
+
+      for (i = maxN; i < total; i++) items[i].style.display = 'none';
+      if (moreNum) moreNum.textContent = '+' + (total - maxN);
+      more.style.display = 'flex';
+    }
+
+    function run() { requestAnimationFrame(update); }
+    run();
+    setTimeout(run, 300);
+    setTimeout(run, 600);
+    window.addEventListener('resize', function() {
+      requestAnimationFrame(update);
+    });
+    window.addEventListener('orientationchange', function() {
+      setTimeout(run, 200);
+    });
+    window.addEventListener('load', run);
+  });
+})();
+</script>
+
+<script>
+function setPdpImage(el) {
+  const main = document.getElementById('mainProductImage');
+  if (!main || !el.dataset.full) return;
+  main.src = el.dataset.full;
+  document.querySelectorAll('#pdpThumbs .pdp-thumb').forEach(function (t) { t.classList.remove('active'); });
+  el.classList.add('active');
+  const row = document.getElementById('pdpThumbs');
+  if (row) {
+    const left = el.offsetLeft - row.offsetLeft;
+    if (left < row.scrollLeft) {
+      row.scrollLeft = Math.max(0, left - 4);
+    } else if (left + el.offsetWidth > row.scrollLeft + row.clientWidth) {
+      row.scrollLeft = left + el.offsetWidth - row.clientWidth + 4;
+    }
+  }
+}
+document.addEventListener("DOMContentLoaded", function () {
+  const thumbsPrev = document.getElementById("thumbsPrev");
+  const thumbsNext = document.getElementById("thumbsNext");
+  const thumbsRow  = document.getElementById("pdpThumbs");
+  function scrollThumbsRow(dir) {
+    if (!thumbsRow) return;
+    thumbsRow.scrollBy({ left: dir * (thumbsRow.clientWidth * 0.8), behavior: "smooth" });
+  }
+  if (thumbsPrev) thumbsPrev.addEventListener("click", function () { scrollThumbsRow(-1); });
+  if (thumbsNext) thumbsNext.addEventListener("click", function () { scrollThumbsRow(1); });
+
+  const mainImg = document.getElementById("mainProductImage");
+  const thumbEls = document.querySelectorAll("#pdpThumbs .pdp-thumb");
+  if (mainImg && thumbEls.length > 1) {
+    let touchX = null;
+    mainImg.addEventListener("touchstart", function (e) {
+      touchX = e.changedTouches[0].clientX;
+    }, { passive: true });
+    mainImg.addEventListener("touchend", function (e) {
+      if (touchX === null) return;
+      const dx = e.changedTouches[0].clientX - touchX;
+      touchX = null;
+      if (Math.abs(dx) < 40) return;
+      const current = document.querySelector("#pdpThumbs .pdp-thumb.active");
+      let idx = Array.prototype.indexOf.call(thumbEls, current);
+      if (idx < 0) idx = 0;
+      if (dx < 0) idx = Math.min(thumbEls.length - 1, idx + 1);
+      else idx = Math.max(0, idx - 1);
+      setPdpImage(thumbEls[idx]);
+    }, { passive: true });
+  }
+
+  const pid       = document.getElementById("pid");
+  const btnCart   = document.getElementById("btnCart");
+  const btnFav    = document.getElementById("btnFav");
+  const toast     = document.getElementById("toast");
+  const heartIcon = document.getElementById("heartIcon");
+
+  const isLoggedIn = "{{ request.user.is_authenticated }}" === "True";
+  const isFav = "{{ is_fav }}" === "True";
+
+  function showToast(msg) {
+    if (!toast) return;
+    toast.textContent = msg;
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 2400);
+  }
+
+  function setFavActive() {
+    btnFav.classList.add("fav-active");
+    heartIcon.style.color = "#fff";
+    btnFav.title = "Click to remove from favourites";
+  }
+
+  function setFavInactive() {
+    btnFav.classList.remove("fav-active");
+    heartIcon.style.color = "";
+    btnFav.title = "Click to add to favourites";
+  }
+
+  const btnBuyNow = document.getElementById("btnBuyNow");
+  const barCart   = document.getElementById("barCart");
+  const barBuyNow = document.getElementById("barBuyNow");
+
+  function doAddToCart(qty) {
+    qty = parseInt(qty, 10) || 1;
+    fetch("/addtocart", {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRFToken': '{{ csrf_token }}',
+      },
+      body: JSON.stringify({ 'product_qty': qty, 'pid': pid.value })
+    }).then(response => response.json())
+      .then(data => {
+        if (data.status === 'redirect') { window.location.href = data.url; return; }
+        showToast(data.status);
+      });
+  }
+
+  function doBuyNow(qty) {
+    qty = parseInt(qty, 10) || 1;
+    const btn = (btnBuyNow && !btnBuyNow.disabled) ? btnBuyNow : barBuyNow;
+    btn.disabled = true;
+    fetch("/addtocart", {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRFToken': '{{ csrf_token }}',
+      },
+      body: JSON.stringify({ 'product_qty': qty, 'pid': pid.value })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'redirect') { window.location.href = data.url; return; }
+      if (data.status && String(data.status).toLowerCase().includes("error")) {
+        btn.disabled = false;
+        showToast(data.status);
+        return;
+      }
+      window.location.href = "/place_order?buy_now=" + encodeURIComponent(pid.value);
+    })
+    .catch(function() {
+      btn.disabled = false;
+      showToast("Something went wrong. Please try again.");
+    });
+  }
+
+  const qtySheet    = document.getElementById("qtySheet");
+  const qtyInput    = document.getElementById("qtySheetInput");
+  const qtyPlus     = document.getElementById("qtySheetPlus");
+  const qtyMinus    = document.getElementById("qtySheetMinus");
+  const qtyConfirm  = document.getElementById("qtySheetConfirm");
+  const qtyCancel   = document.getElementById("qtySheetCancel");
+  const qtyStock    = document.getElementById("qtySheetStock");
+  const qtyPrice    = document.getElementById("qtySheetPrice");
+  const qtySub      = document.getElementById("qtySheetSub");
+  const maxQty      = parseInt("{{ products.quantity|default:0 }}", 10) || 1;
+
+  const pdpTitleEl  = document.querySelector(".pdp-title");
+  const pdpPriceEl  = document.querySelector(".pdp-price-now");
+  const productName = pdpTitleEl ? pdpTitleEl.textContent.trim() : "";
+  const unitPrice   = pdpPriceEl
+    ? parseInt((pdpPriceEl.textContent.match(/[\d,]+/) || ["0"])[0].replace(/,/g, ""), 10) || 0
+    : 0;
+
+  let qtyFlow = "cart";
+
+  function renderQty() {
+    let q = parseInt(qtyInput.value, 10) || 1;
+    if (q < 1) q = 1;
+    if (q > maxQty) q = maxQty;
+    qtyInput.value = q;
+    qtyMinus.disabled = q <= 1;
+    qtyPlus.disabled = q >= maxQty;
+    qtyStock.innerHTML = '<i class="fa fa-check-circle"></i> In stock &middot; ' + maxQty + ' available';
+    qtyPrice.textContent = "Rs. " + (unitPrice * q).toLocaleString("en-IN");
+  }
+
+  function openQtySheet(flow) {
+    if (!isLoggedIn) { window.location.href = "/login"; return; }
+    qtyFlow = flow;
+    qtyInput.value = 1;
+    qtySub.textContent = productName;
+    qtyConfirm.classList.toggle("is-buy", flow === "buy");
+    qtyConfirm.innerHTML = flow === "buy"
+      ? '<i class="fa fa-bolt"></i> Buy Now'
+      : '<i class="fa fa-shopping-cart"></i> Add to Cart';
+    renderQty();
+    qtySheet.classList.add("show");
+    qtySheet.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+    qtyPlus.focus();
+  }
+
+  function closeQtySheet() {
+    qtySheet.classList.remove("show");
+    qtySheet.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+  }
+
+  if (qtyPlus) qtyPlus.addEventListener("click", function () {
+    qtyInput.value = (parseInt(qtyInput.value, 10) || 1) + 1;
+    renderQty();
+  });
+  if (qtyMinus) qtyMinus.addEventListener("click", function () {
+    qtyInput.value = (parseInt(qtyInput.value, 10) || 1) - 1;
+    renderQty();
+  });
+  if (qtyCancel) qtyCancel.addEventListener("click", closeQtySheet);
+  if (qtySheet) {
+    qtySheet.addEventListener("click", function (e) {
+      if (e.target === qtySheet) closeQtySheet();
+    });
+  }
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && qtySheet && qtySheet.classList.contains("show")) closeQtySheet();
+  });
+  if (qtyConfirm) qtyConfirm.addEventListener("click", function () {
+    const flow = qtyFlow;
+    const qty = parseInt(qtyInput.value, 10) || 1;
+    closeQtySheet();
+    if (flow === "buy") doBuyNow(qty); else doAddToCart(qty);
+  });
+
+  if (btnCart) btnCart.addEventListener("click", function () { openQtySheet("cart"); });
+  if (barCart) barCart.addEventListener("click", function () { openQtySheet("cart"); });
+  if (btnBuyNow) btnBuyNow.addEventListener("click", function () { openQtySheet("buy"); });
+  if (barBuyNow) barBuyNow.addEventListener("click", function () { openQtySheet("buy"); });
+
+  window.addEventListener("pageshow", function () {
+    if (btnBuyNow) btnBuyNow.disabled = false;
+    if (barBuyNow) barBuyNow.disabled = false;
+  });
+
+  if (btnFav) {
+    if (isLoggedIn && isFav) setFavActive();
+
+    btnFav.addEventListener("click", function () {
+      if (!isLoggedIn) {
+        window.location.href = "/login";
+        return;
+      }
+      fetch("/fav", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "Accept": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+          "X-CSRFToken": "{{ csrf_token }}",
+        },
+        body: JSON.stringify({ pid: pid.value })
+      })
+      .then(r => r.json())
+      .then(data => {
+        showToast(data.status);
+        if (data.status.includes("Removed")) {
+          setFavInactive();
+        } else if (data.status.includes("Added")) {
+          setFavActive();
+        }
+      });
+    });
+  }
+
+  function fallbackCopy(text, done) {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.contentEditable = true;
+    ta.style.position = "fixed";
+    ta.style.top = "0";
+    ta.style.left = "0";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try { ta.setSelectionRange(0, text.length); } catch (e) {}
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    if (ok) { done(); } else { showToast("Copy failed. Please copy the link manually."); }
+  }
+
+  function wireCopy(btn) {
+    if (!btn) return;
+    btn.addEventListener("click", function () {
+      const url = window.location.href;
+      const done = function () { showToast("Link copied to clipboard"); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(done).catch(function () { fallbackCopy(url, done); });
+      } else {
+        fallbackCopy(url, done);
+      }
+    });
+  }
+
+  wireCopy(document.getElementById("btnShareCopy"));
+  wireCopy(document.getElementById("btnShareCopy2"));
+
+  const btnShare = document.getElementById("btnShare");
+  const shareIcons = document.getElementById("shareIcons");
+  if (btnShare && shareIcons) {
+    btnShare.addEventListener("click", function (e) {
+      e.stopPropagation();
+      shareIcons.classList.toggle("show");
+      btnShare.classList.toggle("open");
+    });
+    document.addEventListener("click", function (e) {
+      if (shareIcons.contains(e.target) || e.target === btnShare) return;
+      shareIcons.classList.remove("show");
+      btnShare.classList.remove("open");
+    });
+  }
+});
+</script>
+
+{% if products.quantity > 0 %}
+<div class="pdp-sticky-bar">
+  <div class="pdp-bar-inner">
+    <div class="pdp-bar-info">
+      <div class="pdp-bar-title">{{ products|truncatechars:32 }}</div>
+      <div class="pdp-bar-price">
+        Rs. {{ products.selling_price|floatformat:0 }}
+        {% if products.original_price > products.selling_price %}
+        <span class="pdp-bar-mrp">Rs. {{ products.original_price|floatformat:0 }}</span>
+        {% endif %}
+      </div>
+    </div>
+    <button type="button" class="pdp-bar-btn pdp-bar-cart" id="barCart">
+      <i class="fa fa-shopping-cart"></i> Add to Cart
+    </button>
+    <button type="button" class="pdp-bar-btn pdp-bar-buy" id="barBuyNow">
+      <i class="fa fa-bolt"></i> Buy Now
+    </button>
+  </div>
+</div>
+{% endif %}
+
+<!-- Quantity selection sheet -->
+<div id="qtySheet" class="qty-sheet-overlay" aria-hidden="true">
+  <div class="qty-sheet-card" role="dialog" aria-modal="true" aria-labelledby="qtySheetTitle">
+    <div class="qty-sheet-grip"></div>
+    <h5 class="qty-sheet-title" id="qtySheetTitle">Select Quantity</h5>
+    <p class="qty-sheet-sub" id="qtySheetSub"></p>
+    <div class="qty-sheet-stepper">
+      <button type="button" class="qty-sheet-btn" id="qtySheetMinus" aria-label="Decrease quantity">−</button>
+      <input type="text" class="qty-sheet-input" id="qtySheetInput" value="1" readonly aria-label="Quantity">
+      <button type="button" class="qty-sheet-btn" id="qtySheetPlus" aria-label="Increase quantity">+</button>
+    </div>
+    <div class="qty-sheet-stock" id="qtySheetStock"></div>
+    <div class="qty-sheet-price" id="qtySheetPrice"></div>
+    <div class="qty-sheet-actions">
+      <button type="button" class="qty-sheet-cancel" id="qtySheetCancel">Cancel</button>
+      <button type="button" class="qty-sheet-confirm" id="qtySheetConfirm">
+        <i class="fa fa-shopping-cart"></i> Add to Cart
+      </button>
+    </div>
+  </div>
+</div>
+
+{% endblock content %}

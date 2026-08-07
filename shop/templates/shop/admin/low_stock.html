@@ -1,0 +1,86 @@
+{% extends 'shop/admin/base.html' %}
+{% block title %}Low Stock{% endblock %}
+{% block page_title %}Low Stock{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3" style="flex-wrap:wrap;gap:10px;">
+  <div style="font-size:13px;color:#a9a2d0;">
+    Products with <strong style="color:#f28b97;">5 or fewer</strong> units left &middot; <span>{{ products.count }}</span> product{{ products.count|pluralize }}
+  </div>
+  <a href="{% url 'admin_products' %}" class="btn btn-outline-secondary btn-action btn-sm">
+    <i class="fa fa-shopping-bag"></i> All Products
+  </a>
+</div>
+
+<div class="card-custom">
+  <div class="card-body p-0">
+    <table class="table table-custom">
+      <thead>
+        <tr>
+          <th>Image</th>
+          <th>Name</th>
+          <th>Category</th>
+          <th>Price</th>
+          <th>Stock</th>
+          <th>Status</th>
+          <th>Update Stock</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in products %}
+        <tr>
+          <td data-label="Image">
+            {% if p.product_image %}
+              <img src="{{ p.product_image.url }}" class="product-img-thumb" alt="">
+            {% else %}
+              <span style="color:#6f6799;">&mdash;</span>
+            {% endif %}
+          </td>
+          <td data-label="Name">{{ p.name }}</td>
+          <td data-label="Category">{{ p.category.name }}</td>
+          <td data-label="Price">Rs.{{ p.selling_price|floatformat:0 }}</td>
+          <td data-label="Stock">
+            {% if p.quantity == 0 %}
+              <span class="badge bg-danger">Out of stock</span>
+            {% else %}
+              <span class="badge bg-danger">{{ p.quantity }}</span>
+            {% endif %}
+          </td>
+          <td data-label="Status">
+            {% if p.status == 0 %}
+              <span class="badge bg-success">Visible</span>
+            {% else %}
+              <span class="badge bg-secondary">Hidden</span>
+            {% endif %}
+          </td>
+          <td data-label="Update Stock">
+            <form method="POST" action="{% url 'low_stock' %}" class="d-flex gap-2" style="align-items:center;flex-wrap:wrap;">
+              {% csrf_token %}
+              <input type="hidden" name="product_id" value="{{ p.id }}">
+              <input type="number" name="quantity" min="0" value="{{ p.quantity }}" class="form-control-sm-custom"
+                     style="width:86px;" required>
+              <button type="submit" class="btn btn-dark btn-action btn-sm" style="white-space:nowrap;">
+                <i class="fa fa-check"></i> Save
+              </button>
+              {% if perms.shop.change_product %}
+              <a href="{% url 'admin_product_edit' p.id %}" class="btn btn-outline-secondary btn-action btn-sm">
+                <i class="fa fa-pencil"></i> Edit
+              </a>
+              {% endif %}
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" style="text-align:center;color:#8f86bd;padding:40px;">
+            <i class="fa fa-check-circle" style="font-size:32px;display:block;margin-bottom:10px;"></i>
+            No low stock products. All products have sufficient quantity.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

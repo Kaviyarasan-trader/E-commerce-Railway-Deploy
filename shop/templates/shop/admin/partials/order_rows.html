@@ -1,0 +1,37 @@
+<tbody>
+  {% for o in orders %}
+  <tr>
+    <td data-label="Order"><strong>#{{ o.id }}</strong></td>
+    <td data-label="Customer">{{ o.user.username }}<br><span style="font-size:11px;color:#8f86bd;">{{ o.phone }}</span></td>
+    <td data-label="Amount">Rs.{{ o.total_amount|floatformat:0 }}</td>
+    <td data-label="Status">
+      <span class="badge badge-status
+        {% if o.status == 'Pending' %}bg-secondary
+        {% elif o.status == 'Processing' %}bg-info
+        {% elif o.status == 'Shipped' %}bg-primary
+        {% elif o.status == 'Delivered' %}bg-success
+        {% elif o.status == 'Cancelled' %}bg-danger
+        {% endif %}">{{ o.status }}</span>
+      {% if o.status == 'Cancelled' and o.cancel_reason %}
+      <div style="font-size:11px;color:#ff8d8d;margin-top:4px;max-width:180px;">{{ o.cancel_reason }}</div>
+      {% endif %}
+    </td>
+    <td data-label="Payment">
+      {% if o.payment_status == 'Paid' %}
+        <span class="badge bg-success">Paid</span>
+      {% else %}
+        <span class="badge bg-warning text-dark">{{ o.payment_status }}</span>
+      {% endif %}
+    </td>
+    <td data-label="Date" style="font-size:12px;color:#a9a2d0;">{{ o.created_at|date:"d M Y" }}</td>
+    <td class="actions"><a href="{% url 'admin_order_detail' o.id %}" class="btn btn-outline-secondary btn-action btn-sm">View</a></td>
+  </tr>
+  {% empty %}
+  <tr>
+    <td colspan="7" style="text-align:center;color:#8f86bd;padding:40px;">
+      <i class="fa fa-list-alt" style="font-size:32px;display:block;margin-bottom:10px;"></i>
+      {% if query %}No orders matching "{{ query }}"{% else %}No orders yet{% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</tbody>

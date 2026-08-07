@@ -1,0 +1,17 @@
+{% extends 'shop/admin/base.html' %}
+{% block title %}No Access{% endblock %}
+{% block page_title %}No Access{% endblock %}
+{% block content %}
+
+<div class="card-custom">
+  <div class="card-body text-center" style="padding:60px 20px;">
+    <i class="fa fa-lock" style="font-size:44px;color:#a9a2d0;display:block;margin-bottom:16px;"></i>
+    <h4 style="color:#fff;margin-bottom:8px;">No Access</h4>
+    <p style="color:#a9a2d0;font-size:14px;max-width:420px;margin:0 auto;">
+      Your admin account has no navigation sections enabled. Contact the superuser to be granted access to a section.
+    </p>
+    <a href="{% url 'home' %}" class="btn btn-dark btn-sm mt-4" style="border-radius:8px;">Go to Storefront</a>
+  </div>
+</div>
+
+{% endblock %}

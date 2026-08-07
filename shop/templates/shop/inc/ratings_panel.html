@@ -1,0 +1,123 @@
+{% load user_filters %}
+<div class="pdp-reviews-block">
+  <div class="pdp-rev-head">
+    <div>
+      <p style="font-size:11px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:#999;margin:0 0 4px;">Customer feedback</p>
+      <h4 style="font-size:15px;font-weight:700;color:#1a1a1a;margin:0;">Ratings &amp; Reviews</h4>
+    </div>
+  </div>
+
+  {% if rating_count %}
+  <div class="rev-overview">
+    <div class="rev-score">
+      <div class="rev-score-num">{{ avg_rating|floatformat:1 }}</div>
+      <div class="rev-score-stars">
+        {% widthratio avg_rating 1 1 as int_avg %}
+        {% for i in "12345" %}
+        <i class="fa {% if forloop.counter <= int_avg %}fa-star{% else %}fa-star-o{% endif %}"></i>
+        {% endfor %}
+      </div>
+      <div class="rev-score-count">{{ rating_count }} Rating{{ rating_count|pluralize }}</div>
+      <div class="rev-verified-count">
+        <i class="fa fa-check-circle"></i> {{ verified_ids|length }} Verified Buyer{{ verified_ids|length|pluralize }}
+      </div>
+    </div>
+    <div class="rev-dist">
+      {% for d in rating_dist %}
+      <div class="rev-dist-row">
+        <span class="rev-dist-label">{{ d.star }}<i class="fa fa-star"></i></span>
+        <div class="rev-dist-bar">
+          <div class="rev-dist-fill" style="width:{{ d.pct }}%;"></div>
+        </div>
+        <span class="rev-dist-pct">{{ d.pct }}%</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% if review_media %}
+  <div class="rev-media">
+    <div class="rev-media-title"><i class="fa fa-camera"></i> Customer Media <span>({{ review_media|length }})</span></div>
+    <div class="rev-media-row" id="revMediaRow">
+      {% for m in review_media %}
+      <a href="{{ m.url }}" onclick="openReviewImage(this);return false;" class="rev-media-item" title="{{ m.user|display_name }}" data-name="{{ m.user|display_name }}" data-rating="{{ m.rating }}" data-verified="{% if m.verified %}1{% else %}0{% endif %}" data-comment="{{ m.comment|escapejs }}" data-type="{{ m.type }}">
+        {% if m.type == 'video' %}
+        <video src="{{ m.url }}" muted playsinline preload="metadata"></video>
+        {% else %}
+        <img src="{{ m.url }}" alt="Customer photo">
+        {% endif %}
+      </a>
+      {% endfor %}
+      {% if review_media|length > 1 %}
+      <span class="rev-media-more-btn" id="revMediaMore" onclick="openAllReviews()" style="display:none;">
+        <span class="rev-media-more-num">+1</span>
+        <span class="rev-media-more-text">more</span>
+      </span>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="rev-write-row">
+    {% if my_rating %}
+    <span class="rev-flag rev-flag-done"><i class="fa fa-check-circle"></i> You rated {{ my_rating.rating }}/5</span>
+    {% elif request.user.is_authenticated and not rating_open %}
+    <span class="rev-flag rev-flag-closed"><i class="fa fa-clock-o"></i> Review window closed</span>
+    {% elif rating_open %}
+    <button type="button" class="rev-write-btn rev-do-review" onclick="openReviewModal({{ eligible_order_item_id }})">
+      <i class="fa fa-star"></i> Write a Review
+    </button>
+    {% endif %}
+  </div>
+
+  <div class="rev-carousel">
+    <button type="button" class="rev-nav rev-nav-prev" onclick="scrollRevRow(this)" aria-label="Previous reviews">&#8249;</button>
+    <div class="rev-row">
+      {% for r in ratings %}
+      <div class="rev-card{% if r.first_media %} rev-card-has-media{% endif %}">
+        <div class="rev-card-top">
+          <span class="rev-avatar-lg">{{ r.user|display_name|slice:":1"|upper }}</span>
+          <div class="rev-card-who">
+            <div class="rev-card-name">{{ r.user|display_name }}</div>
+            {% if r.user.id in verified_ids %}
+            <span class="rev-verified"><i class="fa fa-check-circle"></i> Verified Buyer</span>
+            {% endif %}
+            <div class="rev-card-date">{{ r.created_at|date:"d M Y" }}</div>
+          </div>
+          <span class="rev-card-score">
+            {% for i in "12345" %}
+            <i class="fa {% if forloop.counter <= r.rating %}fa-star{% else %}fa-star-o{% endif %}"></i>
+            {% endfor %}
+          </span>
+        </div>
+        {% if r.first_media %}
+        <a href="{{ r.first_media.url }}" onclick="openReviewImage(this);return false;" class="rev-card-img" data-name="{{ r.user|display_name }}" data-rating="{{ r.rating }}" data-verified="{% if r.user.id in verified_ids %}1{% else %}0{% endif %}" data-comment="{{ r.comment|default:''|escapejs }}" data-type="{{ r.first_media.type }}">
+          {% if r.first_media.type == 'video' %}
+          <video src="{{ r.first_media.url }}" muted playsinline preload="metadata"></video>
+          {% else %}
+          <img src="{{ r.first_media.url }}" alt="Review photo">
+          {% endif %}
+        </a>
+        {% elif r.comment %}
+        <p class="rev-card-text">{{ r.comment }}</p>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    <button type="button" class="rev-nav rev-nav-next" onclick="scrollRevRow(this)" aria-label="Next reviews">&#8250;</button>
+  </div>
+
+  {% if ratings %}
+  <div class="rev-all-wrap">
+    <button type="button" class="rev-more-btn" onclick="openAllReviews()">
+      <i class="fa fa-list"></i> View All Reviews
+    </button>
+  </div>
+  {% endif %}
+  {% else %}
+  <div class="rev-empty-box">
+    <i class="fa fa-star-o"></i>
+    <p>No ratings yet.</p>
+  </div>
+  {% endif %}
+</div>
