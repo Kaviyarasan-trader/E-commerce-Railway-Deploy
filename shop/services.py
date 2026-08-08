@@ -1,7 +1,8 @@
 import logging
 import requests
 from django.conf import settings
-from django.core.mail import send_mail
+from django.core.mail.backends.console import EmailBackend
+from django.core.mail.message import EmailMessage
 from django.utils.html import escape
 
 logger = logging.getLogger(__name__)
@@ -74,27 +75,28 @@ def _send_via_brevo(api_key, email, otp):
         return False
 
 
-def send_otp_email(email, otp, purpose="login"):
-    if settings.BREVO_API_KEY:
-        return _send_via_brevo(settings.BREVO_API_KEY, email, otp)
-    # Gmail SMTP is only for local development. Production must use Brevo
-    # (Railway blocks outbound SMTP), so never fall back to SMTP when DEBUG=False.
-    if not settings.DEBUG:
-        logger.error("OTP email was NOT sent: Brevo is not configured in production.")
-        return False
-    logger.warning(
-        "Brevo not configured; falling back to EMAIL_BACKEND=%s (local dev only).",
-        settings.EMAIL_BACKEND,
-    )
+def _send_otp_via_console(email, otp):
+    """Local-development only fallback - prints to console, never uses SMTP."""
     try:
-        send_mail(
+        msg = EmailMessage(
             "Your KaviBazaar OTP",
             f"Your OTP is {otp}.\nIt is valid for {OTP_VALID_MINUTES} minutes. Do not share it with anyone.",
             settings.EMAIL_HOST_USER or 'no-reply@kavibazaar.local',
             [email],
-            fail_silently=False,
         )
-        return True
+        connection = EmailBackend(fail_silently=False)
+        return connection.send_messages([msg]) == 1
     except Exception as e:
-        logger.error("OTP email could not be sent to %s: %s", email, e)
+        logger.error("OTP email could not be printed to console for %s: %s", email, e)
         return False
+
+
+def send_otp_email(email, otp, purpose="login"):
+    # OTP emails use ONLY the Brevo REST API (Railway blocks outbound SMTP).
+    if settings.BREVO_API_KEY:
+        return _send_via_brevo(settings.BREVO_API_KEY, email, otp)
+    if not settings.DEBUG:
+        logger.error("OTP email was NOT sent: Brevo is not configured in production.")
+        return False
+    logger.warning("Brevo not configured; printing OTP email to console (local dev only).")
+    return _send_otp_via_console(email, otp)
