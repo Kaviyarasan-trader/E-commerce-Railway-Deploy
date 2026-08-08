@@ -2,19 +2,8 @@
    Kavi Bazaar — Premium Dark-Luxury Django Admin Theme
    Overrides for Jazzmin / AdminLTE v4 / Bootstrap 5 (data-bs-theme="dark")
    ========================================================================= */
-
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@400;600;700;800&display=swap');
 
-/* small-caps treatment for heading/title text */
-.app-content-header h3,
-.card-header .card-title,
-.sidebar-menu .nav-header,
-.dropdown-menu .dropdown-header,
-.login-box-msg,
-.table thead th,
-.brand-link .brand-text {
-  font-variant: small-caps;
-}
 
 /* ────────────────────────────── Palette ────────────────────────────── */
 :root,
@@ -171,7 +160,7 @@ a { transition: color 0.18s ease; }
   font-family: "Sora", sans-serif;
   font-size: 0.68rem;
   font-weight: 700;
-  font-variant: small-caps;
+  
   letter-spacing: 2px;
   color: var(--l-gold);
   opacity: 0.85;
@@ -383,7 +372,7 @@ select:not(.form-select):not([multiple]) option {
   color: var(--l-gold-bright);
   font-family: "Sora", sans-serif;
   font-size: 0.74rem;
-  font-variant: small-caps;
+  
   letter-spacing: 1.2px;
   border-bottom: 2px solid var(--l-border-gold) !important;
   white-space: nowrap;
@@ -613,7 +602,7 @@ body.login { background: transparent; }
   font-family: "Sora", sans-serif;
   font-weight: 700;
   letter-spacing: 1px;
-  font-variant: small-caps;
+  
   font-size: 0.82rem;
 }
 .login-card-body .errornote { margin-bottom: 1rem; }
