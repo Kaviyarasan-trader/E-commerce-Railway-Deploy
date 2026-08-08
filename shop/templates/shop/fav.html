@@ -157,9 +157,82 @@
   }
   .btn-shop:hover { color: #fff; transform: translateY(-2px); text-decoration: none; }
 
+  /* ── Mobile-only premium compact card (desktop/tablet layout untouched) ── */
   @media (max-width: 575px) {
-    .fav-card { padding: 14px; gap: 14px; }
-    .fav-actions { margin-left: 0; width: 100%; justify-content: flex-end; }
+    .fav-section {
+      padding: 24px 0 40px;
+      overflow-x: hidden;
+    }
+    .section-title { font-size: 22px; }
+    .section-underline { margin-bottom: 16px; }
+
+    .fav-card {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      padding: 13px;
+      gap: 12px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(60, 52, 137, 0.10);
+      border: 1px solid rgba(60, 52, 137, 0.06);
+      align-items: flex-start;
+      overflow: hidden;
+    }
+
+    .fav-img-wrap {
+      width: 76px;
+      height: 76px;
+      flex-shrink: 0;
+      border-radius: 14px;
+      border: 1px solid rgba(60, 52, 137, 0.08);
+      background: linear-gradient(150deg, #f3f0ff 0%, #faf8ff 100%);
+    }
+    .fav-img-wrap img {
+      padding: 6px;
+      object-fit: contain;
+    }
+
+    .fav-info {
+      flex: 1 1 auto;
+      min-width: 0;
+      width: auto;
+    }
+    .fav-product-name {
+      font-size: 13px;
+      line-height: 1.35;
+      margin-bottom: 9px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .fav-price {
+      font-size: 15px;
+      display: inline-flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+    .fav-price span { font-size: 11px; }
+    .fav-mrp { margin-left: 4px; font-size: 11px; }
+
+    .fav-actions {
+      margin-left: 0;
+      width: 100%;
+      flex-wrap: nowrap;
+      gap: 8px;
+    }
+    .btn-view,
+    .btn-remove {
+      flex: 1 1 0;
+      min-width: 0;
+      justify-content: center;
+      height: 42px;
+      border-radius: 12px;
+      padding: 0 10px;
+      gap: 6px;
+      font-size: 12px;
+    }
+    .btn-view { box-shadow: 0 6px 14px rgba(60, 52, 137, 0.24); }
   }
 </style>
 
