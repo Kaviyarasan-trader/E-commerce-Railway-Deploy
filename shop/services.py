@@ -2,85 +2,93 @@ import logging
 import requests
 from django.conf import settings
 from django.core.mail import send_mail
+from django.utils.html import escape
 
 logger = logging.getLogger(__name__)
 
 OTP_VALID_MINUTES = getattr(settings, 'OTP_VALID_MINUTES', 5)
 
 
-def _send_via_sendgrid(api_key, email, otp, purpose):
+def _build_otp_html(otp):
+    code = escape(str(otp))
+    return (
+        '<div style="font-family:Arial, Helvetica, sans-serif; max-width:520px; '
+        'margin:0 auto; padding:32px; background:#ffffff; border-radius:12px; '
+        'border:1px solid #e5e7eb;">'
+        '<div style="font-size:22px; font-weight:700; color:#0b1220; margin-bottom:20px;">'
+        'KaviBazaar</div>'
+        '<p style="font-size:15px; color:#374151; line-height:1.6; margin:0 0 16px;">'
+        'Your verification code is:</p>'
+        '<div style="font-size:30px; font-weight:700; letter-spacing:8px; color:#0b1220; '
+        'padding:14px 18px; background:#f3f4f6; border-radius:8px; display:inline-block;">'
+        + code + '</div>'
+        '<p style="font-size:14px; color:#6b7280; line-height:1.6; margin:18px 0 0;">'
+        'This OTP is valid for a limited time. Please do not share this OTP with anyone.</p>'
+        '</div>'
+    )
+
+
+def _send_via_brevo(api_key, email, otp):
     from_email = (
-        settings.SENDGRID_FROM_EMAIL
+        settings.BREVO_FROM_EMAIL
         or settings.EMAIL_HOST_USER
         or 'no-reply@kavibazaar.local'
     )
+    from_name = settings.BREVO_FROM_NAME or 'KaviBazaar'
     try:
         resp = requests.post(
-            "https://api.sendgrid.com/v3/mail/send",
+            "https://api.brevo.com/v3/smtp/email",
             headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
+                "accept": "application/json",
+                "api-key": api_key,
+                "content-type": "application/json",
             },
             json={
-                "personalizations": [
-                    {
-                        "to": [{"email": email}],
-                        "subject": f"KaviBazaar {purpose.title()} OTP",
-                    }
-                ],
-                "from": {"email": from_email},
-                "content": [
-                    {
-                        "type": "text/plain",
-                        "value": (
-                            f"Your OTP is {otp}.\n"
-                            f"It is valid for {OTP_VALID_MINUTES} minutes. Do not share it with anyone."
-                        ),
-                    }
-                ],
+                "sender": {"name": from_name, "email": from_email},
+                "to": [{"email": email}],
+                "subject": "Your KaviBazaar OTP",
+                "htmlContent": _build_otp_html(otp),
             },
             timeout=15,
         )
-        if resp.status_code == 202:
-            logger.info("SendGrid OTP email accepted for %s (status 202)", email)
+        if 200 <= resp.status_code < 300:
+            logger.info("Brevo OTP email accepted for %s (status %s)", email, resp.status_code)
             return True
         error_detail = ''
         try:
-            errors = (resp.json() or {}).get('errors') or []
-            error_detail = '; '.join(
-                str(e.get('message', '')) for e in errors
-                if isinstance(e, dict) and e.get('message')
-            )
+            message = (resp.json() or {}).get('message')
+            if message:
+                error_detail = str(message)
         except Exception:
             error_detail = ''
         if error_detail:
             logger.error(
-                "SendGrid OTP email rejected for %s (status %s): %s",
+                "Brevo OTP email rejected for %s (status %s): %s",
                 email, resp.status_code, error_detail,
             )
         else:
-            logger.error("SendGrid OTP email rejected for %s (status %s)", email, resp.status_code)
+            logger.error("Brevo OTP email rejected for %s (status %s)", email, resp.status_code)
         return False
     except Exception as e:
-        logger.error("SendGrid OTP email could not be sent to %s: %s", email, e)
+        logger.error("Brevo OTP email could not be sent to %s: %s", email, e)
         return False
 
 
 def send_otp_email(email, otp, purpose="login"):
-    if settings.SENDGRID_API_KEY:
-        return _send_via_sendgrid(settings.SENDGRID_API_KEY, email, otp, purpose)
-    # Gmail SMTP is only for local development. Production must use SendGrid
+    if settings.BREVO_API_KEY:
+        return _send_via_brevo(settings.BREVO_API_KEY, email, otp)
+    # Gmail SMTP is only for local development. Production must use Brevo
     # (Railway blocks outbound SMTP), so never fall back to SMTP when DEBUG=False.
     if not settings.DEBUG:
-        logger.error("OTP email was NOT sent: SendGrid is not configured in production.")
+        logger.error("OTP email was NOT sent: Brevo is not configured in production.")
         return False
     logger.warning(
-        "SendGrid not configured; falling back to EMAIL_BACKEND=%s (local dev only).",
+        "Brevo not configured; falling back to EMAIL_BACKEND=%s (local dev only).",
         settings.EMAIL_BACKEND,
     )
     try:
         send_mail(
-            f"KaviBazaar {purpose.title()} OTP",
+            "Your KaviBazaar OTP",
             f"Your OTP is {otp}.\nIt is valid for {OTP_VALID_MINUTES} minutes. Do not share it with anyone.",
             settings.EMAIL_HOST_USER or 'no-reply@kavibazaar.local',
             [email],

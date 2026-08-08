@@ -1306,11 +1306,11 @@ def _mask_email(email):
 
 def _issue_login_otp(email, is_new):
     """Rate-limited OTP issuance. Returns (ok, error_message)."""
-    # Fail closed in production: OTP emails must go through the SendGrid HTTPS
-    # API (Railway blocks outbound SMTP). Without SENDGRID_API_KEY no email
+    # Fail closed in production: OTP emails must go through the Brevo HTTPS
+    # API (Railway blocks outbound SMTP). Without BREVO_API_KEY no email
     # could ever be delivered, so don't issue an OTP or claim it was sent.
-    if not settings.DEBUG and not settings.SENDGRID_API_KEY:
-        logger.error("OTP email was NOT sent: SENDGRID_API_KEY is not configured in production.")
+    if not settings.DEBUG and not settings.BREVO_API_KEY:
+        logger.error("OTP email was NOT sent: BREVO_API_KEY is not configured in production.")
         return False, "Could not send the OTP right now. Please try again later."
 
     recent = LoginOTP.objects.filter(
