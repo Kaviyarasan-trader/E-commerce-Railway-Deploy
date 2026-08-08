@@ -1,6 +1,9 @@
+import base64
 import logging
+
 import requests
 from django.conf import settings
+from django.contrib.staticfiles import finders
 from django.core.mail.backends.console import EmailBackend
 from django.core.mail.message import EmailMessage
 from django.utils.html import escape
@@ -9,23 +12,64 @@ logger = logging.getLogger(__name__)
 
 OTP_VALID_MINUTES = getattr(settings, 'OTP_VALID_MINUTES', 5)
 
+_LOGO_B64_CACHE = None
+
+
+def _kavibazaar_logo_data_uri():
+    """Base64 data URI for the KaviBazaar logo, loaded once from static files."""
+    global _LOGO_B64_CACHE
+    if _LOGO_B64_CACHE is None:
+        try:
+            path = finders.find('shop/kavibazaar_logo.png')
+            if path:
+                with open(path, 'rb') as fh:
+                    _LOGO_B64_CACHE = base64.b64encode(fh.read()).decode('ascii')
+            else:
+                _LOGO_B64_CACHE = ''
+        except Exception:
+            _LOGO_B64_CACHE = ''
+    if _LOGO_B64_CACHE:
+        return 'data:image/png;base64,' + _LOGO_B64_CACHE
+    return None
+
 
 def _build_otp_html(otp):
     code = escape(str(otp))
+    logo_uri = _kavibazaar_logo_data_uri()
+    if logo_uri:
+        brand_block = (
+            '<img src="%s" alt="KaviBazaar" width="200" '
+            'style="display:block; margin:0 auto; width:200px; max-width:75%%; height:auto; '
+            'border:0; outline:none; text-decoration:none;" />'
+        ) % logo_uri
+    else:
+        brand_block = (
+            '<div style="font-family:Arial, Helvetica, sans-serif; font-size:22px; '
+            'font-weight:700; color:#0b1220; text-align:center;">KaviBazaar</div>'
+        )
     return (
-        '<div style="font-family:Arial, Helvetica, sans-serif; max-width:520px; '
-        'margin:0 auto; padding:32px; background:#ffffff; border-radius:12px; '
-        'border:1px solid #e5e7eb;">'
-        '<div style="font-size:22px; font-weight:700; color:#0b1220; margin-bottom:20px;">'
-        'KaviBazaar</div>'
-        '<p style="font-size:15px; color:#374151; line-height:1.6; margin:0 0 16px;">'
-        'Your verification code is:</p>'
-        '<div style="font-size:30px; font-weight:700; letter-spacing:8px; color:#0b1220; '
-        'padding:14px 18px; background:#f3f4f6; border-radius:8px; display:inline-block;">'
-        + code + '</div>'
-        '<p style="font-size:14px; color:#6b7280; line-height:1.6; margin:18px 0 0;">'
-        'This OTP is valid for a limited time. Please do not share this OTP with anyone.</p>'
-        '</div>'
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" '
+        'style="background-color:#f7f4ee;">'
+        '<tr><td align="center" style="padding:32px 16px;">'
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" '
+        'style="max-width:520px; background:#ffffff; border:1px solid #e8e2d5; border-radius:14px;">'
+        '<tr><td height="4" style="height:4px; background:#c9a24b; border-radius:14px 14px 0 0; '
+        'font-size:0; line-height:0;">&nbsp;</td></tr>'
+        '<tr><td align="center" style="padding:30px 24px 6px 24px;">' + brand_block + '</td></tr>'
+        '<tr><td align="center" style="padding:16px 24px 22px 24px; border-bottom:1px solid #f0e9db;">'
+        '<p style="font-family:Arial, Helvetica, sans-serif; font-size:15px; color:#374151; '
+        'line-height:1.6; margin:0; text-align:center;">Your verification code is:</p>'
+        '</td></tr>'
+        '<tr><td align="center" style="padding:26px 24px 8px 24px;">'
+        '<div style="font-family:Arial, Helvetica, sans-serif; display:inline-block; '
+        'font-size:32px; font-weight:700; letter-spacing:10px; color:#1c1300; '
+        'background:#faf5e7; border:1px solid #e8d5a0; border-radius:10px; '
+        'padding:14px 22px;">' + code + '</div></td></tr>'
+        '<tr><td align="center" style="padding:16px 24px 30px 24px;">'
+        '<p style="font-family:Arial, Helvetica, sans-serif; font-size:14px; color:#6b7280; '
+        'line-height:1.6; margin:0; text-align:center;">This OTP is valid for a limited time. '
+        'Please do not share this OTP with anyone.</p></td></tr>'
+        '</table></td></tr></table>'
     )
 
 
