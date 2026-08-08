@@ -15,8 +15,20 @@ OTP_VALID_MINUTES = getattr(settings, 'OTP_VALID_MINUTES', 5)
 _LOGO_B64_CACHE = None
 
 
+def _kavibazaar_logo_url():
+    """Absolute public HTTPS URL to the KaviBazaar logo (served by WhiteNoise).
+
+    Gmail does not render base64 data URIs in images, so production emails use
+    the live Railway static URL derived from SITE_DOMAIN / RAILWAY_PUBLIC_DOMAIN.
+    """
+    domain = (getattr(settings, 'SITE_DOMAIN', '') or '').strip().rstrip('/')
+    if not domain:
+        return None
+    return 'https://%s/static/shop/kavibazaar_logo.png' % domain
+
+
 def _kavibazaar_logo_data_uri():
-    """Base64 data URI for the KaviBazaar logo, loaded once from static files."""
+    """Base64 data URI fallback only for local dev (no public domain)."""
     global _LOGO_B64_CACHE
     if _LOGO_B64_CACHE is None:
         try:
@@ -35,7 +47,7 @@ def _kavibazaar_logo_data_uri():
 
 def _build_otp_html(otp):
     code = escape(str(otp))
-    logo_uri = _kavibazaar_logo_data_uri()
+    logo_uri = _kavibazaar_logo_url() or _kavibazaar_logo_data_uri()
     if logo_uri:
         brand_block = (
             '<img src="%s" alt="KaviBazaar" width="200" '
